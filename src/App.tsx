@@ -812,7 +812,7 @@ function App() {
         if (top - ph < pad) { top = hoveredEvent.y + 20; ty = '0%' }
         return <div className="fixed z-50 pointer-events-none" style={{left: left + 'px', top: top + 'px', transform: `translate(${tx}, ${ty})`}}>
           <div className={pBg + ' border ' + pBo + ' rounded-xl shadow-2xl overflow-hidden'} style={{width: pw + 'px', maxHeight: (window.innerHeight - pad * 2) + 'px'}}>
-            {hoveredEvent.event.imageUrl && <div className={'w-full overflow-hidden ' + iBg} style={{maxHeight: '160px'}}><img src={hoveredEvent.event.imageUrl} alt={hoveredEvent.event.title} className="w-full object-cover" style={{maxHeight: '160px'}} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} /></div>}
+            {hoveredEvent.event.imageUrl && <div className={'w-full overflow-hidden flex items-center justify-center ' + iBg} style={{maxHeight: '200px'}}><img src={hoveredEvent.event.imageUrl} alt={hoveredEvent.event.title} className="max-w-full max-h-full object-contain" style={{maxHeight: '200px'}} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} /></div>}
             <div className="px-4 py-3">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 rounded-full" style={{backgroundColor: CC[hoveredEvent.event.category]}} />
