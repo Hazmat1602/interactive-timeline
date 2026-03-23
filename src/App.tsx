@@ -646,30 +646,47 @@ function App() {
                 })}
 
                 {/* Connection lines rendered as curved paths avoiding other timelines */}
-                {showConnections && connections.map((conn, idx) => {
-                  const fp = filteredPeople.find(p => p.id === conn.fromId), tp = filteredPeople.find(p => p.id === conn.toId)
-                  if (!fp || !tp) return null
-                  const fi = filteredPeople.indexOf(fp), ti = filteredPeople.indexOf(tp)
+                {showConnections && (() => {
                   const rowStep = compactMode ? 40 : 80
-                  const fy = fi * rowStep + barH / 2, ty = ti * rowStep + barH / 2
                   const svgH = filteredPeople.length * rowStep + 40
-                  const fromEndPct = Math.min(100, ytp(fp.deathYear ?? new Date().getFullYear()))
-                  const toStartPct = Math.max(0, ytp(tp.birthYear))
-                  const rowsBetween = Math.abs(fi - ti)
-                  const curveOffset = Math.min(15, 3 + rowsBetween * 3)
-                  const cpXPct = Math.min(100, Math.max(fromEndPct, toStartPct) + curveOffset)
-                  const midY = (fy + ty) / 2
-                  return <div key={'conn-' + idx} className="absolute top-0 left-0 w-full pointer-events-none" style={{height: svgH + 'px', zIndex: 5}}>
-                    <svg className="absolute top-0 left-0 w-full h-full" style={{overflow: 'visible'}}>
-                      <path d={`M ${fromEndPct}% ${fy} Q ${cpXPct}% ${midY} ${toStartPct}% ${ty}`} fill="none" stroke={conn.color} strokeWidth="2" strokeDasharray="6 3" opacity="0.7" />
-                      <circle cx={fromEndPct + '%'} cy={fy} r="5" fill={conn.color} opacity="0.9" />
-                      <circle cx={toStartPct + '%'} cy={ty} r="5" fill={conn.color} opacity="0.9" />
+                  const vbW = 1000
+                  return <>
+                    <svg className="absolute top-0 left-0 w-full pointer-events-none" style={{height: svgH + 'px', zIndex: 5, overflow: 'visible'}} viewBox={`0 0 ${vbW} ${svgH}`} preserveAspectRatio="none">
+                      {connections.map((conn, idx) => {
+                        const fp = filteredPeople.find(p => p.id === conn.fromId), tp = filteredPeople.find(p => p.id === conn.toId)
+                        if (!fp || !tp) return null
+                        const fi = filteredPeople.indexOf(fp), ti = filteredPeople.indexOf(tp)
+                        const fy = fi * rowStep + barH / 2, ty = ti * rowStep + barH / 2
+                        const fromEndX = (Math.min(100, ytp(fp.deathYear ?? new Date().getFullYear())) / 100) * vbW
+                        const toStartX = (Math.max(0, ytp(tp.birthYear)) / 100) * vbW
+                        const rowsBetween = Math.abs(fi - ti)
+                        const curveOffset = Math.min(150, 30 + rowsBetween * 30)
+                        const cpX = Math.min(vbW, Math.max(fromEndX, toStartX) + curveOffset)
+                        const midY = (fy + ty) / 2
+                        return <g key={'c-' + idx}>
+                          <path d={`M ${fromEndX} ${fy} Q ${cpX} ${midY} ${toStartX} ${ty}`} fill="none" stroke={conn.color} strokeWidth="2" strokeDasharray="6 3" opacity="0.7" vectorEffect="non-scaling-stroke" />
+                          <circle cx={fromEndX} cy={fy} r="5" fill={conn.color} opacity="0.9" vectorEffect="non-scaling-stroke" />
+                          <circle cx={toStartX} cy={ty} r="5" fill={conn.color} opacity="0.9" vectorEffect="non-scaling-stroke" />
+                        </g>
+                      })}
                     </svg>
-                    <div className="absolute pointer-events-none" style={{left: cpXPct + '%', top: midY - 10, transform: 'translateX(-50%)', zIndex: 40}}>
-                      <span className="text-xs font-bold whitespace-nowrap px-1.5 py-0.5 rounded" style={{color: conn.color, backgroundColor: darkMode ? 'rgba(3,7,18,0.85)' : 'rgba(255,255,255,0.9)', border: '1px solid ' + conn.color + '40'}}>{conn.label}</span>
-                    </div>
-                  </div>
-                })}
+                    {connections.map((conn, idx) => {
+                      const fp = filteredPeople.find(p => p.id === conn.fromId), tp = filteredPeople.find(p => p.id === conn.toId)
+                      if (!fp || !tp) return null
+                      const fi = filteredPeople.indexOf(fp), ti = filteredPeople.indexOf(tp)
+                      const fy = fi * rowStep + barH / 2, ty = ti * rowStep + barH / 2
+                      const fromEndPct = Math.min(100, ytp(fp.deathYear ?? new Date().getFullYear()))
+                      const toStartPct = Math.max(0, ytp(tp.birthYear))
+                      const rowsBetween = Math.abs(fi - ti)
+                      const curveOffset = Math.min(15, 3 + rowsBetween * 3)
+                      const cpXPct = Math.min(100, Math.max(fromEndPct, toStartPct) + curveOffset)
+                      const midY = (fy + ty) / 2
+                      return <div key={'cl-' + idx} className="absolute pointer-events-none" style={{left: cpXPct + '%', top: midY - 10, transform: 'translateX(-50%)', zIndex: 40}}>
+                        <span className="text-xs font-bold whitespace-nowrap px-1.5 py-0.5 rounded" style={{color: conn.color, backgroundColor: darkMode ? 'rgba(3,7,18,0.85)' : 'rgba(255,255,255,0.9)', border: '1px solid ' + conn.color + '40'}}>{conn.label}</span>
+                      </div>
+                    })}
+                  </>
+                })()}
 
                 {/* Person rows */}
                 {filteredPeople.map(person => {
