@@ -645,46 +645,44 @@ function App() {
                   return <div key={'g-' + year} className={`absolute top-0 bottom-0 w-px ${gl}`} style={{left: pct + '%', height: (filteredPeople.length * (compactMode ? 40 : 80) + 40) + 'px'}} />
                 })}
 
-                {/* Connection lines rendered as curved paths avoiding other timelines */}
+                {/* Connection S-curve lines */}
                 {showConnections && (() => {
                   const rowStep = compactMode ? 40 : 80
                   const svgH = filteredPeople.length * rowStep + 40
                   const vbW = 1000
+                  const connData = connections.map(conn => {
+                    const fp = filteredPeople.find(p => p.id === conn.fromId), tp = filteredPeople.find(p => p.id === conn.toId)
+                    if (!fp || !tp) return null
+                    const fi = filteredPeople.indexOf(fp), ti = filteredPeople.indexOf(tp)
+                    const fy = fi * rowStep + barH / 2, ty = ti * rowStep + barH / 2
+                    const fromEndPct = Math.min(100, ytp(fp.deathYear ?? new Date().getFullYear()))
+                    const toStartPct = Math.max(0, ytp(tp.birthYear))
+                    const fromEndX = (fromEndPct / 100) * vbW
+                    const toStartX = (toStartPct / 100) * vbW
+                    const rowsBetween = Math.abs(fi - ti)
+                    const curveOffset = Math.min(200, 50 + rowsBetween * 40)
+                    const cp1x = fromEndX + curveOffset, cp1y = fy
+                    const cp2x = toStartX + curveOffset, cp2y = ty
+                    const midX = 0.125 * fromEndX + 0.375 * cp1x + 0.375 * cp2x + 0.125 * toStartX
+                    const midY = 0.125 * fy + 0.375 * cp1y + 0.375 * cp2y + 0.125 * ty
+                    const midPct = (midX / vbW) * 100
+                    return { conn, fromEndX, toStartX, fy, ty, cp1x, cp1y, cp2x, cp2y, midPct, midY }
+                  }).filter(Boolean) as { conn: typeof connections[0], fromEndX: number, toStartX: number, fy: number, ty: number, cp1x: number, cp1y: number, cp2x: number, cp2y: number, midPct: number, midY: number }[]
                   return <>
                     <svg className="absolute top-0 left-0 w-full pointer-events-none" style={{height: svgH + 'px', zIndex: 5, overflow: 'visible'}} viewBox={`0 0 ${vbW} ${svgH}`} preserveAspectRatio="none">
-                      {connections.map((conn, idx) => {
-                        const fp = filteredPeople.find(p => p.id === conn.fromId), tp = filteredPeople.find(p => p.id === conn.toId)
-                        if (!fp || !tp) return null
-                        const fi = filteredPeople.indexOf(fp), ti = filteredPeople.indexOf(tp)
-                        const fy = fi * rowStep + barH / 2, ty = ti * rowStep + barH / 2
-                        const fromEndX = (Math.min(100, ytp(fp.deathYear ?? new Date().getFullYear())) / 100) * vbW
-                        const toStartX = (Math.max(0, ytp(tp.birthYear)) / 100) * vbW
-                        const rowsBetween = Math.abs(fi - ti)
-                        const curveOffset = Math.min(150, 30 + rowsBetween * 30)
-                        const cpX = Math.min(vbW, Math.max(fromEndX, toStartX) + curveOffset)
-                        const midY = (fy + ty) / 2
-                        return <g key={'c-' + idx}>
-                          <path d={`M ${fromEndX} ${fy} Q ${cpX} ${midY} ${toStartX} ${ty}`} fill="none" stroke={conn.color} strokeWidth="2" strokeDasharray="6 3" opacity="0.7" vectorEffect="non-scaling-stroke" />
-                          <circle cx={fromEndX} cy={fy} r="5" fill={conn.color} opacity="0.9" vectorEffect="non-scaling-stroke" />
-                          <circle cx={toStartX} cy={ty} r="5" fill={conn.color} opacity="0.9" vectorEffect="non-scaling-stroke" />
+                      {connData.map((cd, idx) => (
+                        <g key={'c-' + idx}>
+                          <path d={`M ${cd.fromEndX} ${cd.fy} C ${cd.cp1x} ${cd.cp1y}, ${cd.cp2x} ${cd.cp2y}, ${cd.toStartX} ${cd.ty}`} fill="none" stroke={cd.conn.color} strokeWidth="2" strokeDasharray="6 3" opacity="0.7" vectorEffect="non-scaling-stroke" />
+                          <circle cx={cd.fromEndX} cy={cd.fy} r="5" fill={cd.conn.color} opacity="0.9" vectorEffect="non-scaling-stroke" />
+                          <circle cx={cd.toStartX} cy={cd.ty} r="5" fill={cd.conn.color} opacity="0.9" vectorEffect="non-scaling-stroke" />
                         </g>
-                      })}
+                      ))}
                     </svg>
-                    {connections.map((conn, idx) => {
-                      const fp = filteredPeople.find(p => p.id === conn.fromId), tp = filteredPeople.find(p => p.id === conn.toId)
-                      if (!fp || !tp) return null
-                      const fi = filteredPeople.indexOf(fp), ti = filteredPeople.indexOf(tp)
-                      const fy = fi * rowStep + barH / 2, ty = ti * rowStep + barH / 2
-                      const fromEndPct = Math.min(100, ytp(fp.deathYear ?? new Date().getFullYear()))
-                      const toStartPct = Math.max(0, ytp(tp.birthYear))
-                      const rowsBetween = Math.abs(fi - ti)
-                      const curveOffset = Math.min(15, 3 + rowsBetween * 3)
-                      const cpXPct = Math.min(100, Math.max(fromEndPct, toStartPct) + curveOffset)
-                      const midY = (fy + ty) / 2
-                      return <div key={'cl-' + idx} className="absolute pointer-events-none" style={{left: cpXPct + '%', top: midY - 10, transform: 'translateX(-50%)', zIndex: 40}}>
-                        <span className="text-xs font-bold whitespace-nowrap px-1.5 py-0.5 rounded" style={{color: conn.color, backgroundColor: darkMode ? 'rgba(3,7,18,0.85)' : 'rgba(255,255,255,0.9)', border: '1px solid ' + conn.color + '40'}}>{conn.label}</span>
+                    {connData.map((cd, idx) => (
+                      <div key={'cl-' + idx} className="absolute pointer-events-none" style={{left: cd.midPct + '%', top: cd.midY - 10, transform: 'translateX(-50%)', zIndex: 40}}>
+                        <span className="text-xs font-bold whitespace-nowrap px-1.5 py-0.5 rounded" style={{color: cd.conn.color, backgroundColor: darkMode ? 'rgba(3,7,18,0.85)' : 'rgba(255,255,255,0.9)', border: '1px solid ' + cd.conn.color + '40'}}>{cd.conn.label}</span>
                       </div>
-                    })}
+                    ))}
                   </>
                 })()}
 
