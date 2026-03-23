@@ -372,10 +372,10 @@ function App() {
       const origStyles: {el: HTMLElement, height: string, overflow: string, maxHeight: string}[] = []
       if (scrollParent) { origStyles.push({el: scrollParent, height: scrollParent.style.height, overflow: scrollParent.style.overflow, maxHeight: scrollParent.style.maxHeight}); scrollParent.style.height = 'auto'; scrollParent.style.overflow = 'visible'; scrollParent.style.maxHeight = 'none' }
       if (mainParent) { origStyles.push({el: mainParent, height: mainParent.style.height, overflow: mainParent.style.overflow, maxHeight: mainParent.style.maxHeight}); mainParent.style.height = 'auto'; mainParent.style.overflow = 'visible'; mainParent.style.maxHeight = 'none' }
-      const origPad = el.style.paddingLeft; el.style.paddingLeft = '200px'
+      const origPadBot = el.style.paddingBottom; el.style.paddingBottom = '80px'
       await new Promise(r => setTimeout(r, 50))
-      const canvas = await html2canvas(el, {backgroundColor: darkMode ? '#030712' : '#ffffff', scale: 3, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: el.scrollWidth + 200, windowHeight: el.scrollHeight + 100, width: el.scrollWidth, height: el.scrollHeight})
-      el.style.paddingLeft = origPad
+      const canvas = await html2canvas(el, {backgroundColor: darkMode ? '#030712' : '#ffffff', scale: 3, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: el.scrollWidth, windowHeight: el.scrollHeight + 100, width: el.scrollWidth, height: el.scrollHeight})
+      el.style.paddingBottom = origPadBot
       origStyles.forEach(s => { s.el.style.height = s.height; s.el.style.overflow = s.overflow; s.el.style.maxHeight = s.maxHeight })
       const pad = 40, titleH = 60
       const finalCanvas = document.createElement('canvas')
