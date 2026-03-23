@@ -433,13 +433,15 @@ function App() {
               <Search size={14} className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${mt}`} />
               <input placeholder="Search people..." value={sidebarSearch} onChange={e => setSidebarSearch(e.target.value)} className={`w-full ${iBg} border ${iBo} rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`} />
             </div>
-            <div className="flex items-center justify-between mt-2">
-              <span className={`text-xs ${mt}`}>{filteredPeople.length} people</span>
-              <div className="flex gap-1">
-                <button onClick={() => setSortBy('custom')} className={`px-2 py-0.5 text-xs rounded ${sortBy === 'custom' ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt}`}>Custom</button>
-                <button onClick={() => setSortBy('name')} className={`px-2 py-0.5 text-xs rounded ${sortBy === 'name' ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt}`}>Name</button>
-                <button onClick={() => setSortBy('birth')} className={`px-2 py-0.5 text-xs rounded ${sortBy === 'birth' ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt}`}>Birth</button>
-                <button onClick={() => setSortBy('death')} className={`px-2 py-0.5 text-xs rounded ${sortBy === 'death' ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt}`}>Death</button>
+            <div className="mt-2">
+              <div className="flex items-center justify-between mb-1">
+                <span className={`text-xs ${mt}`}>{filteredPeople.length} people</span>
+                <span className={`text-xs ${mt}`}>Sort</span>
+              </div>
+              <div className="grid grid-cols-4 gap-1">
+                {(['custom', 'name', 'birth', 'death'] as const).map(s => (
+                  <button key={s} onClick={() => setSortBy(s)} className={`px-1 py-0.5 text-xs rounded text-center capitalize ${sortBy === s ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt}`}>{s}</button>
+                ))}
               </div>
             </div>
           </div>
