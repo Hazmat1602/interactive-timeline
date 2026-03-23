@@ -481,6 +481,9 @@ function App() {
                                 <p className={`text-xs font-medium truncate ${hiddenPeopleIds.has(person.id) ? 'line-through opacity-50' : ''}`}>{person.name}</p>
                                 <p className={`text-xs ${mt}`}>{formatYear(person.birthYear)} - {person.deathYear ? formatYear(person.deathYear) : 'Present'}</p>
                               </div>
+                              <button onClick={e => { e.stopPropagation(); startEditPerson(person) }} className={`opacity-0 group-hover:opacity-100 p-0.5 ${hov} rounded transition-all flex-shrink-0`} title="Edit person">
+                                <Edit2 size={10} className={st} />
+                              </button>
                               <button onClick={e => { e.stopPropagation(); togglePersonVisibility(person.id) }} className={`p-0.5 ${hov} rounded transition-colors flex-shrink-0`} title={hiddenPeopleIds.has(person.id) ? 'Show' : 'Hide'}>
                                 {hiddenPeopleIds.has(person.id) ? <EyeOff size={10} className={mt} /> : <Eye size={10} className={st} />}
                               </button>
@@ -511,6 +514,9 @@ function App() {
                           <p className={`text-xs font-medium truncate ${hiddenPeopleIds.has(person.id) ? 'line-through opacity-50' : ''}`}>{person.name}</p>
                           <p className={`text-xs ${mt}`}>{formatYear(person.birthYear)} - {person.deathYear ? formatYear(person.deathYear) : 'Present'}</p>
                         </div>
+                        <button onClick={e => { e.stopPropagation(); startEditPerson(person) }} className={`opacity-0 group-hover:opacity-100 p-0.5 ${hov} rounded transition-all flex-shrink-0`} title="Edit person">
+                          <Edit2 size={10} className={st} />
+                        </button>
                         <button onClick={e => { e.stopPropagation(); togglePersonVisibility(person.id) }} className={`p-0.5 ${hov} rounded transition-colors flex-shrink-0`} title={hiddenPeopleIds.has(person.id) ? 'Show' : 'Hide'}>
                           {hiddenPeopleIds.has(person.id) ? <EyeOff size={10} className={mt} /> : <Eye size={10} className={st} />}
                         </button>
