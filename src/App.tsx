@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react'
-import { ZoomIn, ZoomOut, RotateCcw, ChevronDown, ChevronUp, Plus, Trash2, X, Edit2, Check, Search, Layers, Image, FolderOpen, Eye, EyeOff, ChevronRight, Download, Upload, Sun, Moon, Camera, GripVertical, Link } from 'lucide-react'
+import { ZoomIn, ZoomOut, RotateCcw, ChevronDown, ChevronUp, Plus, Trash2, X, Edit2, Check, Search, Layers, Image, FolderOpen, Eye, EyeOff, ChevronRight, Download, Upload, Sun, Moon, Camera, GripVertical, Link, Users, List } from 'lucide-react'
 import './App.css'
 
 interface LifeEvent {
@@ -201,7 +201,10 @@ function App() {
   const [filterCategory, setFilterCategory] = useState<LifeEvent['category'] | 'all'>('all')
   const [compactMode, setCompactMode] = useState(false)
   const [sidebarSearch, setSidebarSearch] = useState('')
-  const [sortBy, setSortBy] = useState<'name' | 'custom' | 'birth' | 'death'>('custom')
+  const [sortBy, setSortBy] = useState<'custom' | 'birth'>('birth')
+  const [sidebarTab, setSidebarTab] = useState<'groups' | 'people'>('groups')
+  const [inlineNewGroupName, setInlineNewGroupName] = useState('')
+  const [showInlineNewGroup, setShowInlineNewGroup] = useState<'add' | 'edit' | null>(null)
   const [groups, setGroups] = useState<Group[]>(initialGroups)
   const [showAddGroup, setShowAddGroup] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
@@ -233,9 +236,7 @@ function App() {
   const filteredPeople = useMemo(() => {
     let r = people.filter(p => (!p.groupIds?.length || p.groupIds.some(gid => visibleGroupIds.has(gid))) && !hiddenPeopleIds.has(p.id))
     if (sidebarSearch) { const q = sidebarSearch.toLowerCase(); r = r.filter(p => p.name.toLowerCase().includes(q)) }
-    if (sortBy === 'name') r = [...r].sort((a, b) => a.name.localeCompare(b.name))
-    else if (sortBy === 'birth') r = [...r].sort((a, b) => a.birthYear - b.birthYear)
-    else if (sortBy === 'death') r = [...r].sort((a, b) => (a.deathYear ?? 9999) - (b.deathYear ?? 9999))
+    if (sortBy === 'birth') r = [...r].sort((a, b) => a.birthYear - b.birthYear)
     else { const m = new Map(personOrder.map((id, i) => [id, i])); r = [...r].sort((a, b) => (m.get(a.id) ?? 999) - (m.get(b.id) ?? 999)) }
     return r
   }, [people, sidebarSearch, sortBy, visibleGroupIds, personOrder, hiddenPeopleIds])
@@ -281,8 +282,12 @@ function App() {
   const zoomOut = () => { const c = (viewStart + viewEnd) / 2, r = Math.min(3000, tw * 1.4); setViewStart(Math.round(c - r / 2)); setViewEnd(Math.round(c + r / 2)) }
   const resetView = () => {
     if (!people.length) { setViewStart(1400); setViewEnd(1970); return }
-    setViewStart(Math.min(...people.map(p => p.birthYear)) - 20)
-    setViewEnd(Math.max(...people.map(p => p.deathYear ?? new Date().getFullYear())) + 20)
+    const minY = Math.min(...people.map(p => p.birthYear))
+    const maxY = Math.max(...people.map(p => p.deathYear ?? new Date().getFullYear()))
+    const range = maxY - minY
+    const namePad = Math.max(40, range * 0.15)
+    setViewStart(Math.round(minY - namePad))
+    setViewEnd(Math.round(maxY + 20))
   }
 
   const getTickMarks = useMemo(() => {
@@ -322,7 +327,11 @@ function App() {
   const filteredEvents = (events: LifeEvent[]) => filterCategory === 'all' ? events : events.filter(e => e.category === filterCategory)
 
   const toggleGroupVis = (gid: string) => setGroups(groups.map(g => g.id === gid ? { ...g, visible: !g.visible } : g))
-  const addGroup = () => { if (!newGroupName.trim()) return; setGroups([...groups, { id: genId(), name: newGroupName.trim(), visible: true, color: GROUP_COLORS[groups.length % GROUP_COLORS.length] }]); setNewGroupName(''); setShowAddGroup(false) }
+  const addGroup = (name?: string) => { const n = (name || newGroupName).trim(); if (!n) return; const g = { id: genId(), name: n, visible: true, color: GROUP_COLORS[groups.length % GROUP_COLORS.length] }; setGroups([...groups, g]); setNewGroupName(''); setShowAddGroup(false); return g }
+  const hideAllGroups = () => setGroups(groups.map(g => ({ ...g, visible: false })))
+  const showAllGroups = () => setGroups(groups.map(g => ({ ...g, visible: true })))
+  const allGroupsVisible = groups.every(g => g.visible)
+  const addInlineGroup = () => { if (!inlineNewGroupName.trim()) return; const g = addGroup(inlineNewGroupName.trim()); setInlineNewGroupName(''); setShowInlineNewGroup(null); return g }
   const deleteGroup = (gid: string) => { setGroups(groups.filter(g => g.id !== gid)); setPeople(people.map(p => p.groupIds?.includes(gid) ? { ...p, groupIds: p.groupIds.filter(id => id !== gid).length ? p.groupIds.filter(id => id !== gid) : undefined } : p)) }
   const saveGroupName = (gid: string) => { if (!editingGroupName.trim()) return; setGroups(groups.map(g => g.id === gid ? { ...g, name: editingGroupName.trim() } : g)); setEditingGroupId(null) }
   const toggleCollapseGroup = (gid: string) => { setCollapsedGroups(prev => { const n = new Set(prev); n.has(gid) ? n.delete(gid) : n.add(gid); return n }) }
@@ -431,24 +440,45 @@ function App() {
           <div className={`p-3 border-b ${bc}`}>
             <div className="relative">
               <Search size={14} className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${mt}`} />
-              <input placeholder="Search people..." value={sidebarSearch} onChange={e => setSidebarSearch(e.target.value)} className={`w-full ${iBg} border ${iBo} rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+              <input placeholder="Search people, groups, eras..." value={sidebarSearch} onChange={e => setSidebarSearch(e.target.value)} className={`w-full ${iBg} border ${iBo} rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`} />
             </div>
             <div className="mt-2">
               <div className="flex items-center justify-between mb-1">
                 <span className={`text-xs ${mt}`}>{filteredPeople.length} people</span>
-                <span className={`text-xs ${mt}`}>Sort</span>
+                <div className="flex items-center gap-1">
+                  <span className={`text-xs ${mt}`}>Sort:</span>
+                  {(['custom', 'birth'] as const).map(s => (
+                    <button key={s} onClick={() => setSortBy(s)} className={`px-1.5 py-0.5 text-xs rounded text-center capitalize ${sortBy === s ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt}`}>{s}</button>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-4 gap-1">
-                {(['custom', 'name', 'birth', 'death'] as const).map(s => (
-                  <button key={s} onClick={() => setSortBy(s)} className={`px-1 py-0.5 text-xs rounded text-center capitalize ${sortBy === s ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt}`}>{s}</button>
-                ))}
+              <div className="flex gap-1 mt-1">
+                <button onClick={() => setSidebarTab('groups')} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs rounded transition-colors ${sidebarTab === 'groups' ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt + ' ' + hov}`}><Users size={12} /> Groups</button>
+                <button onClick={() => setSidebarTab('people')} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs rounded transition-colors ${sidebarTab === 'people' ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt + ' ' + hov}`}><List size={12} /> All People</button>
               </div>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
+            {sidebarTab === 'people' && (
+              <div className="space-y-0.5 mb-2">
+                {people.filter(p => !sidebarSearch || p.name.toLowerCase().includes(sidebarSearch.toLowerCase())).sort((a, b) => sortBy === 'birth' ? a.birthYear - b.birthYear : 0).map(person => (
+                  <div key={person.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg ${hov} transition-all`}>
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{backgroundColor: person.color}} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs font-medium truncate ${hiddenPeopleIds.has(person.id) ? 'line-through opacity-50' : ''}`}>{person.name}</p>
+                      <p className={`text-xs ${mt}`}>{formatYear(person.birthYear)} - {person.deathYear ? formatYear(person.deathYear) : 'Present'}</p>
+                    </div>
+                    <button onClick={() => togglePersonVisibility(person.id)} className={`p-0.5 ${hov} rounded transition-colors flex-shrink-0`} title={hiddenPeopleIds.has(person.id) ? 'Show' : 'Hide'}>
+                      {hiddenPeopleIds.has(person.id) ? <EyeOff size={10} className={mt} /> : <Eye size={10} className={st} />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {sidebarTab === 'groups' && (<div>
             <div className="space-y-1 mb-2">
-              {groups.map(group => {
-                const gp = people.filter(p => p.groupIds?.includes(group.id))
+              {groups.filter(g => !sidebarSearch || g.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map(group => {
+                const gp = people.filter(p => p.groupIds?.includes(group.id)).filter(p => !sidebarSearch || p.name.toLowerCase().includes(sidebarSearch.toLowerCase()))
                 const collapsed = collapsedGroups.has(group.id)
                 return (
                   <div key={group.id}>
@@ -463,7 +493,7 @@ function App() {
                           {group.name}<span className={`${mt} font-normal ml-1`}>({gp.length})</span>
                         </span>
                       )}
-                      <button onClick={() => toggleGroupVis(group.id)} className={`p-0.5 ${hov} rounded transition-colors`}>
+                      <button onClick={() => toggleGroupVis(group.id)} className={`p-0.5 ${hov} rounded transition-colors`} title={group.visible ? 'Hide group' : 'Show group'}>
                         {group.visible ? <Eye size={12} className={st} /> : <EyeOff size={12} className={mt} />}
                       </button>
                       <button onClick={() => deleteGroup(group.id)} className="p-0.5 hover:bg-red-500/20 rounded opacity-0 group-hover/grp:opacity-100 transition-all">
@@ -531,10 +561,16 @@ function App() {
                 </div>
               </div>
             )}
+            <div className="flex items-center gap-1">
+              <button onClick={() => allGroupsVisible ? hideAllGroups() : showAllGroups()} className={`flex items-center gap-1 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors`} title={allGroupsVisible ? 'Hide all groups' : 'Show all groups'}>
+                {allGroupsVisible ? <EyeOff size={12} /> : <Eye size={12} />} {allGroupsVisible ? 'Hide All' : 'Show All'}
+              </button>
+              <div className="flex-1" />
+            </div>
             {showAddGroup ? (
               <div className="px-1 flex items-center gap-1">
                 <input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addGroup(); if (e.key === 'Escape') setShowAddGroup(false) }} placeholder="Group name..." className={`flex-1 ${iBg} border ${iBo} rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500`} autoFocus />
-                <button onClick={addGroup} className="p-1 bg-blue-600 hover:bg-blue-700 rounded transition-colors text-white"><Check size={10} /></button>
+                <button onClick={() => addGroup()} className="p-1 bg-blue-600 hover:bg-blue-700 rounded transition-colors text-white"><Check size={10} /></button>
                 <button onClick={() => setShowAddGroup(false)} className={`p-1 ${iBg} rounded transition-colors`}><X size={10} /></button>
               </div>
             ) : (
@@ -542,14 +578,15 @@ function App() {
                 <FolderOpen size={12} /> New Group
               </button>
             )}
+            </div>)}
             <div className={`mt-3 pt-3 border-t ${bc} space-y-1`}>
               <div className="flex items-center justify-between px-1">
-                <span className={`text-xs ${mt} font-medium`}>Eras</span>
+                <span className={`text-xs ${mt} font-medium`}>Eras ({eras.filter(e => !sidebarSearch || e.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length})</span>
                 <button onClick={() => setShowEras(!showEras)} className={`p-0.5 ${hov} rounded transition-colors`}>
                   {showEras ? <Eye size={12} className={st} /> : <EyeOff size={12} className={mt} />}
                 </button>
               </div>
-              {eras.map(era => (
+              {eras.filter(e => !sidebarSearch || e.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map(era => (
                 <div key={era.id} className={`group/era flex items-center gap-1 px-1 py-0.5 rounded text-xs ${hov}`}>
                   <div className="w-3 h-2 rounded-sm flex-shrink-0" style={{backgroundColor: era.color}} />
                   <span className="truncate flex-1">{era.name}</span>
@@ -719,17 +756,25 @@ function App() {
                             {person.name}
                           </div>
                         </div>
-                        {/* Event dots */}
-                        {filteredEvents(person.events).map(event => {
-                          const evPct = ytp(event.year); if (evPct < -2 || evPct > 102) return null
-                          return <div key={event.id} className="event-dot absolute z-20 cursor-pointer" style={{left: evPct + '%', transform: 'translateX(-50%)'}}
-                            onMouseEnter={e => { const r = e.currentTarget.getBoundingClientRect(); setHoveredEvent({event, person, x: r.left + r.width / 2, y: r.top}) }}
-                            onMouseLeave={() => setHoveredEvent(null)}
-                            onClick={e => { e.stopPropagation(); setSelectedPerson(person); setExpandedPersonId(expandedPersonId === person.id ? null : person.id) }}>
-                            <div className={dotSz + ' rounded-full border-2 ' + (d ? 'border-gray-900' : 'border-white') + ' shadow-lg transition-transform hover:scale-150'} style={{backgroundColor: CC[event.category]}} />
-                            {event.imageUrl && !compactMode && <div className={'absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full border ' + (d ? 'border-gray-900' : 'border-gray-300')} />}
-                          </div>
-                        })}
+                        {/* Event dots - stack same-year events */}
+                        {(() => {
+                          const evts = filteredEvents(person.events)
+                          const byYear = new Map<number, LifeEvent[]>()
+                          evts.forEach(ev => { const arr = byYear.get(ev.year) || []; arr.push(ev); byYear.set(ev.year, arr) })
+                          return Array.from(byYear.entries()).map(([year, yearEvts]) => {
+                            const evPct = ytp(year); if (evPct < -2 || evPct > 102) return null
+                            return yearEvts.map((event, idx) => {
+                              const offset = yearEvts.length > 1 ? (idx - (yearEvts.length - 1) / 2) * (compactMode ? 6 : 8) : 0
+                              return <div key={event.id} className="event-dot absolute z-20 cursor-pointer" style={{left: evPct + '%', transform: `translateX(-50%) translateY(${offset}px)`}}
+                                onMouseEnter={e => { const r = e.currentTarget.getBoundingClientRect(); setHoveredEvent({event, person, x: r.left + r.width / 2, y: r.top}) }}
+                                onMouseLeave={() => setHoveredEvent(null)}
+                                onClick={e => { e.stopPropagation(); setSelectedPerson(person); setExpandedPersonId(expandedPersonId === person.id ? null : person.id) }}>
+                                <div className={dotSz + ' rounded-full border-2 ' + (d ? 'border-gray-900' : 'border-white') + ' shadow-lg transition-transform hover:scale-150'} style={{backgroundColor: CC[event.category]}} />
+                                {event.imageUrl && !compactMode && <div className={'absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full border ' + (d ? 'border-gray-900' : 'border-gray-300')} />}
+                              </div>
+                            })
+                          })
+                        })()}
                       </div>
 
                       {/* Expanded details */}
@@ -855,6 +900,15 @@ function App() {
                 <label className={`text-xs ${mt} mb-1 block`}>Groups</label>
                 <div className="flex flex-wrap gap-1.5">
                   {groups.map(g => <button key={g.id} type="button" onClick={() => setNewPerson({...newPerson, groupIds: newPerson.groupIds.includes(g.id) ? newPerson.groupIds.filter(id => id !== g.id) : [...newPerson.groupIds, g.id]})} className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${newPerson.groupIds.includes(g.id) ? 'text-white border-transparent' : mt + ' ' + iBo}`} style={newPerson.groupIds.includes(g.id) ? {backgroundColor: g.color} : {}}>{g.name}</button>)}
+                  {showInlineNewGroup === 'add' ? (
+                    <div className="flex items-center gap-1">
+                      <input value={inlineNewGroupName} onChange={e => setInlineNewGroupName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { const g = addInlineGroup(); if (g) setNewPerson({...newPerson, groupIds: [...newPerson.groupIds, g.id]}) } if (e.key === 'Escape') { setShowInlineNewGroup(null); setInlineNewGroupName('') } }} placeholder="New group..." className={`${iBg} border ${iBo} rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 w-24`} autoFocus />
+                      <button type="button" onClick={() => { const g = addInlineGroup(); if (g) setNewPerson({...newPerson, groupIds: [...newPerson.groupIds, g.id]}) }} className="p-0.5 bg-blue-600 hover:bg-blue-700 rounded text-white"><Check size={10} /></button>
+                      <button type="button" onClick={() => { setShowInlineNewGroup(null); setInlineNewGroupName('') }} className={`p-0.5 ${iBg} rounded`}><X size={10} /></button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setShowInlineNewGroup('add')} className={`px-2.5 py-1 text-xs rounded-full border ${iBo} ${mt} ${hov} transition-colors`}><Plus size={10} className="inline -mt-px" /> New</button>
+                  )}
                 </div>
               </div>
               <button onClick={addPerson} disabled={!newPerson.name || !newPerson.birthYear} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-white">Add to Timeline</button>
@@ -883,6 +937,15 @@ function App() {
                 <label className={`text-xs ${mt} mb-1 block`}>Groups</label>
                 <div className="flex flex-wrap gap-1.5">
                   {groups.map(g => <button key={g.id} type="button" onClick={() => { const gids = editingPerson.groupIds || []; setEditingPerson({...editingPerson, groupIds: gids.includes(g.id) ? gids.filter(id => id !== g.id) : [...gids, g.id]}) }} className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${(editingPerson.groupIds || []).includes(g.id) ? 'text-white border-transparent' : mt + ' ' + iBo}`} style={(editingPerson.groupIds || []).includes(g.id) ? {backgroundColor: g.color} : {}}>{g.name}</button>)}
+                  {showInlineNewGroup === 'edit' ? (
+                    <div className="flex items-center gap-1">
+                      <input value={inlineNewGroupName} onChange={e => setInlineNewGroupName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { const g = addInlineGroup(); if (g) setEditingPerson({...editingPerson, groupIds: [...(editingPerson.groupIds || []), g.id]}) } if (e.key === 'Escape') { setShowInlineNewGroup(null); setInlineNewGroupName('') } }} placeholder="New group..." className={`${iBg} border ${iBo} rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 w-24`} autoFocus />
+                      <button type="button" onClick={() => { const g = addInlineGroup(); if (g) setEditingPerson({...editingPerson, groupIds: [...(editingPerson.groupIds || []), g.id]}) }} className="p-0.5 bg-blue-600 hover:bg-blue-700 rounded text-white"><Check size={10} /></button>
+                      <button type="button" onClick={() => { setShowInlineNewGroup(null); setInlineNewGroupName('') }} className={`p-0.5 ${iBg} rounded`}><X size={10} /></button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setShowInlineNewGroup('edit')} className={`px-2.5 py-1 text-xs rounded-full border ${iBo} ${mt} ${hov} transition-colors`}><Plus size={10} className="inline -mt-px" /> New</button>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
