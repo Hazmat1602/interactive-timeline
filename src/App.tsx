@@ -837,15 +837,11 @@ function App() {
                                   <span className={'text-xs font-mono ' + mt + ' w-12'}>{formatYear(event.year)}</span>
                                 </div>
                                 {event.imageUrl && (
-                                  <div className="relative group/img flex-shrink-0">
-                                    <img src={event.imageUrl} alt={event.title} className={'w-12 h-12 object-cover rounded-lg border cursor-pointer ' + bc} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                                    <div className={'absolute left-14 top-0 z-50 hidden group-hover/img:block ' + pBg + ' border ' + pBo + ' rounded-xl shadow-2xl overflow-hidden'} style={{width: '320px'}}>
-                                      <img src={event.imageUrl} alt={event.title} className="w-full max-h-64 object-contain" style={{backgroundColor: d ? '#1f2937' : '#f3f4f6'}} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                                      <div className="px-3 py-2">
-                                        <p className="text-sm font-medium">{event.title}</p>
-                                        <p className={'text-xs ' + mt}>{formatYear(event.year)}</p>
-                                      </div>
-                                    </div>
+                                  <div className="relative flex-shrink-0">
+                                    <img src={event.imageUrl} alt={event.title} className={'w-12 h-12 object-cover rounded-lg border cursor-pointer ' + bc}
+                                      onMouseEnter={e => { const r = e.currentTarget.getBoundingClientRect(); setHoveredEvent({event, person, x: r.right + 8, y: r.top}) }}
+                                      onMouseLeave={() => setHoveredEvent(null)}
+                                      onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                                   </div>
                                 )}
                                 <div className="flex-1 min-w-0">
