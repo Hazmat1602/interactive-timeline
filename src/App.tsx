@@ -201,7 +201,7 @@ function App() {
   const [filterCategory, setFilterCategory] = useState<LifeEvent['category'] | 'all'>('all')
   const [compactMode, setCompactMode] = useState(false)
   const [sidebarSearch, setSidebarSearch] = useState('')
-  const [sortBy, setSortBy] = useState<'name' | 'custom'>('custom')
+  const [sortBy, setSortBy] = useState<'name' | 'custom' | 'birth' | 'death'>('custom')
   const [groups, setGroups] = useState<Group[]>(initialGroups)
   const [showAddGroup, setShowAddGroup] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
@@ -234,6 +234,8 @@ function App() {
     let r = people.filter(p => (!p.groupId || visibleGroupIds.has(p.groupId)) && !hiddenPeopleIds.has(p.id))
     if (sidebarSearch) { const q = sidebarSearch.toLowerCase(); r = r.filter(p => p.name.toLowerCase().includes(q)) }
     if (sortBy === 'name') r = [...r].sort((a, b) => a.name.localeCompare(b.name))
+    else if (sortBy === 'birth') r = [...r].sort((a, b) => a.birthYear - b.birthYear)
+    else if (sortBy === 'death') r = [...r].sort((a, b) => (a.deathYear ?? 9999) - (b.deathYear ?? 9999))
     else { const m = new Map(personOrder.map((id, i) => [id, i])); r = [...r].sort((a, b) => (m.get(a.id) ?? 999) - (m.get(b.id) ?? 999)) }
     return r
   }, [people, sidebarSearch, sortBy, visibleGroupIds, personOrder, hiddenPeopleIds])
@@ -436,6 +438,8 @@ function App() {
               <div className="flex gap-1">
                 <button onClick={() => setSortBy('custom')} className={`px-2 py-0.5 text-xs rounded ${sortBy === 'custom' ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt}`}>Custom</button>
                 <button onClick={() => setSortBy('name')} className={`px-2 py-0.5 text-xs rounded ${sortBy === 'name' ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt}`}>Name</button>
+                <button onClick={() => setSortBy('birth')} className={`px-2 py-0.5 text-xs rounded ${sortBy === 'birth' ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt}`}>Birth</button>
+                <button onClick={() => setSortBy('death')} className={`px-2 py-0.5 text-xs rounded ${sortBy === 'death' ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt}`}>Death</button>
               </div>
             </div>
           </div>
