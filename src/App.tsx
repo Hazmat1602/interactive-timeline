@@ -529,21 +529,6 @@ function App() {
               </button>
             )}
             <div className={`mt-3 pt-3 border-t ${bc} space-y-1`}>
-              <button onClick={() => setShowAddConnection(true)} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
-                <Link size={12} /> Add Connection
-              </button>
-              <button onClick={exportData} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
-                <Download size={12} /> Export JSON
-              </button>
-              <button onClick={() => fileInputRef.current?.click()} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
-                <Upload size={12} /> Import JSON
-              </button>
-              <input ref={fileInputRef} type="file" accept=".json" onChange={importData} className="hidden" />
-              <button onClick={exportAsPng} disabled={exportingPng} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full ${exportingPng ? 'opacity-50' : ''}`}>
-                <Camera size={12} /> {exportingPng ? 'Exporting...' : 'Export as PNG'}
-              </button>
-            </div>
-            <div className={`mt-3 pt-3 border-t ${bc} space-y-1`}>
               <div className="flex items-center justify-between px-1">
                 <span className={`text-xs ${mt} font-medium`}>Eras</span>
                 <button onClick={() => setShowEras(!showEras)} className={`p-0.5 ${hov} rounded transition-colors`}>
@@ -576,9 +561,11 @@ function App() {
                 </button>
               )}
             </div>
-            {connections.length > 0 && (
-              <div className={`mt-3 pt-3 border-t ${bc}`}>
-                <div className={`text-xs ${mt} font-medium px-1 mb-1`}>Connections</div>
+            <div className={`mt-3 pt-3 border-t ${bc} space-y-1`}>
+              <button onClick={() => setShowAddConnection(true)} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
+                <Link size={12} /> Add Connection
+              </button>
+              {connections.length > 0 && (
                 <div className="space-y-0.5">
                   {connections.map((conn, idx) => {
                     const from = people.find(p => p.id === conn.fromId), to = people.find(p => p.id === conn.toId)
@@ -594,8 +581,20 @@ function App() {
                     )
                   })}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+            <div className={`mt-3 pt-3 border-t ${bc} space-y-1`}>
+              <button onClick={exportData} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
+                <Download size={12} /> Export JSON
+              </button>
+              <button onClick={() => fileInputRef.current?.click()} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
+                <Upload size={12} /> Import JSON
+              </button>
+              <input ref={fileInputRef} type="file" accept=".json" onChange={importData} className="hidden" />
+              <button onClick={exportAsPng} disabled={exportingPng} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full ${exportingPng ? 'opacity-50' : ''}`}>
+                <Camera size={12} /> {exportingPng ? 'Exporting...' : 'Export as PNG'}
+              </button>
+            </div>
           </div>
         </aside>
 
