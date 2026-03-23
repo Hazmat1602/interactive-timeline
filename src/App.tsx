@@ -365,7 +365,30 @@ function App() {
     const el = exportRef.current; if (!el) return
     setExportingPng(true)
     await new Promise(r => setTimeout(r, 100))
-    try { const mod = await import('html2canvas'); const html2canvas = mod.default; const scrollParent = el.closest('.overflow-y-auto'); const origHeight = scrollParent ? (scrollParent as HTMLElement).style.height : ''; const origOverflow = scrollParent ? (scrollParent as HTMLElement).style.overflow : ''; if (scrollParent) { (scrollParent as HTMLElement).style.height = 'auto'; (scrollParent as HTMLElement).style.overflow = 'visible' } const canvas = await html2canvas(el, {backgroundColor: darkMode ? '#030712' : '#ffffff', scale: 2, useCORS: true, logging: false, scrollY: -window.scrollY}); if (scrollParent) { (scrollParent as HTMLElement).style.height = origHeight; (scrollParent as HTMLElement).style.overflow = origOverflow } const link = document.createElement('a'); link.download = 'timeline-' + new Date().toISOString().split('T')[0] + '.png'; link.href = canvas.toDataURL(); link.click() }
+    try {
+      const mod = await import('html2canvas'); const html2canvas = mod.default
+      const scrollParent = el.closest('.overflow-y-auto') as HTMLElement | null
+      const mainParent = scrollParent?.closest('main') as HTMLElement | null
+      const origStyles: {el: HTMLElement, height: string, overflow: string, maxHeight: string}[] = []
+      if (scrollParent) { origStyles.push({el: scrollParent, height: scrollParent.style.height, overflow: scrollParent.style.overflow, maxHeight: scrollParent.style.maxHeight}); scrollParent.style.height = 'auto'; scrollParent.style.overflow = 'visible'; scrollParent.style.maxHeight = 'none' }
+      if (mainParent) { origStyles.push({el: mainParent, height: mainParent.style.height, overflow: mainParent.style.overflow, maxHeight: mainParent.style.maxHeight}); mainParent.style.height = 'auto'; mainParent.style.overflow = 'visible'; mainParent.style.maxHeight = 'none' }
+      const origPad = el.style.paddingLeft; el.style.paddingLeft = '200px'
+      await new Promise(r => setTimeout(r, 50))
+      const canvas = await html2canvas(el, {backgroundColor: darkMode ? '#030712' : '#ffffff', scale: 3, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: el.scrollWidth + 200, windowHeight: el.scrollHeight + 100, width: el.scrollWidth, height: el.scrollHeight})
+      el.style.paddingLeft = origPad
+      origStyles.forEach(s => { s.el.style.height = s.height; s.el.style.overflow = s.overflow; s.el.style.maxHeight = s.maxHeight })
+      const pad = 40, titleH = 60
+      const finalCanvas = document.createElement('canvas')
+      finalCanvas.width = canvas.width + pad * 2; finalCanvas.height = canvas.height + pad * 2 + titleH
+      const ctx = finalCanvas.getContext('2d')!
+      ctx.fillStyle = darkMode ? '#030712' : '#ffffff'; ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height)
+      ctx.font = 'bold 48px system-ui, -apple-system, sans-serif'; ctx.fillStyle = darkMode ? '#e5e7eb' : '#1f2937'; ctx.textAlign = 'center'
+      ctx.fillText('Interactive Timeline', finalCanvas.width / 2, pad + 40)
+      ctx.font = '24px system-ui, -apple-system, sans-serif'; ctx.fillStyle = darkMode ? '#6b7280' : '#9ca3af'
+      ctx.fillText(formatYear(viewStart) + ' – ' + formatYear(viewEnd) + '  •  ' + filteredPeople.length + ' people', finalCanvas.width / 2, pad + 40 + 30)
+      ctx.drawImage(canvas, pad, pad + titleH)
+      const link = document.createElement('a'); link.download = 'timeline-' + new Date().toISOString().split('T')[0] + '.png'; link.href = finalCanvas.toDataURL('image/png'); link.click()
+    }
     catch (err) { console.error(err); alert('PNG export failed. Try Export JSON instead.') }
     finally { setExportingPng(false) }
   }
