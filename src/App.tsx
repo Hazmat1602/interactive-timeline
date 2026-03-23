@@ -645,7 +645,7 @@ function App() {
                   return <div key={'g-' + year} className={`absolute top-0 bottom-0 w-px ${gl}`} style={{left: pct + '%', height: (filteredPeople.length * (compactMode ? 40 : 80) + 40) + 'px'}} />
                 })}
 
-                {/* Connection lines rendered as absolutely positioned divs with SVG */}
+                {/* Connection lines rendered as curved paths avoiding other timelines */}
                 {showConnections && connections.map((conn, idx) => {
                   const fp = filteredPeople.find(p => p.id === conn.fromId), tp = filteredPeople.find(p => p.id === conn.toId)
                   if (!fp || !tp) return null
@@ -655,15 +655,17 @@ function App() {
                   const svgH = filteredPeople.length * rowStep + 40
                   const fromEndPct = Math.min(100, ytp(fp.deathYear ?? new Date().getFullYear()))
                   const toStartPct = Math.max(0, ytp(tp.birthYear))
-                  const midPct = (fromEndPct + toStartPct) / 2
+                  const rowsBetween = Math.abs(fi - ti)
+                  const curveOffset = Math.min(15, 3 + rowsBetween * 3)
+                  const cpXPct = Math.min(100, Math.max(fromEndPct, toStartPct) + curveOffset)
                   const midY = (fy + ty) / 2
                   return <div key={'conn-' + idx} className="absolute top-0 left-0 w-full pointer-events-none" style={{height: svgH + 'px', zIndex: 5}}>
                     <svg className="absolute top-0 left-0 w-full h-full" style={{overflow: 'visible'}}>
-                      <line x1={fromEndPct + '%'} y1={fy} x2={toStartPct + '%'} y2={ty} stroke={conn.color} strokeWidth="2" strokeDasharray="6 3" opacity="0.7" />
+                      <path d={`M ${fromEndPct}% ${fy} Q ${cpXPct}% ${midY} ${toStartPct}% ${ty}`} fill="none" stroke={conn.color} strokeWidth="2" strokeDasharray="6 3" opacity="0.7" />
                       <circle cx={fromEndPct + '%'} cy={fy} r="5" fill={conn.color} opacity="0.9" />
                       <circle cx={toStartPct + '%'} cy={ty} r="5" fill={conn.color} opacity="0.9" />
                     </svg>
-                    <div className="absolute pointer-events-none" style={{left: midPct + '%', top: midY - 10, transform: 'translateX(-50%)', zIndex: 40}}>
+                    <div className="absolute pointer-events-none" style={{left: cpXPct + '%', top: midY - 10, transform: 'translateX(-50%)', zIndex: 40}}>
                       <span className="text-xs font-bold whitespace-nowrap px-1.5 py-0.5 rounded" style={{color: conn.color, backgroundColor: darkMode ? 'rgba(3,7,18,0.85)' : 'rgba(255,255,255,0.9)', border: '1px solid ' + conn.color + '40'}}>{conn.label}</span>
                     </div>
                   </div>
