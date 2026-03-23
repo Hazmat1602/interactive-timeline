@@ -37,6 +37,23 @@ interface Connection {
   color: string
 }
 
+interface Era {
+  id: string
+  name: string
+  startYear: number
+  endYear: number
+  color: string
+}
+
+const ERA_COLORS = ['#3b82f680','#ef444480','#10b98180','#f59e0b80','#8b5cf680','#ec489980','#06b6d480','#f9731680']
+
+const initialEras: Era[] = [
+  { id: 'era1', name: 'Renaissance', startYear: 1400, endYear: 1600, color: '#10b98160' },
+  { id: 'era2', name: 'Enlightenment', startYear: 1685, endYear: 1815, color: '#3b82f660' },
+  { id: 'era3', name: 'Industrial Revolution', startYear: 1760, endYear: 1840, color: '#f59e0b60' },
+  { id: 'era4', name: 'Modern Era', startYear: 1900, endYear: 2000, color: '#8b5cf660' },
+]
+
 const GROUP_COLORS = ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316','#14b8a6','#6366f1']
 const CONNECTION_COLORS = ['#f472b6','#60a5fa','#34d399','#fbbf24','#a78bfa','#fb923c','#2dd4bf','#818cf8','#f87171','#4ade80']
 
@@ -196,6 +213,11 @@ function App() {
   const [newConnection, setNewConnection] = useState({fromId: '', toId: '', label: ''})
   const [dragPersonId, setDragPersonId] = useState<string | null>(null)
   const [personOrder, setPersonOrder] = useState<string[]>(initialPeople.map(p => p.id))
+  const [eras, setEras] = useState<Era[]>(initialEras)
+  const [showAddEra, setShowAddEra] = useState(false)
+  const [newEra, setNewEra] = useState({name: '', startYear: '', endYear: ''})
+  const [showEras, setShowEras] = useState(true)
+  const [exportingPng, setExportingPng] = useState(false)
   const timelineRef = useRef<HTMLDivElement>(null)
   const exportRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -282,21 +304,33 @@ function App() {
   const toggleCollapseGroup = (gid: string) => { setCollapsedGroups(prev => { const n = new Set(prev); n.has(gid) ? n.delete(gid) : n.add(gid); return n }) }
   const formatYear = (y: number) => y < 0 ? Math.abs(y) + ' BC' : '' + y
 
+  const addEra = () => {
+    if (!newEra.name || !newEra.startYear || !newEra.endYear) return
+    const sy = parseInt(newEra.startYear), ey = parseInt(newEra.endYear)
+    if (isNaN(sy) || isNaN(ey) || sy >= ey) return
+    setEras([...eras, {id: genId(), name: newEra.name, startYear: sy, endYear: ey, color: ERA_COLORS[eras.length % ERA_COLORS.length]}])
+    setNewEra({name: '', startYear: '', endYear: ''}); setShowAddEra(false)
+  }
+  const removeEra = (id: string) => setEras(eras.filter(e => e.id !== id))
+
   const exportData = () => {
-    const blob = new Blob([JSON.stringify({people, groups, connections, personOrder}, null, 2)], {type: 'application/json'})
+    const blob = new Blob([JSON.stringify({people, groups, connections, personOrder, eras}, null, 2)], {type: 'application/json'})
     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'timeline-' + new Date().toISOString().split('T')[0] + '.json'; a.click(); URL.revokeObjectURL(url)
   }
   const importData = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => { try { const d = JSON.parse(ev.target?.result as string); if (d.people) setPeople(d.people); if (d.groups) setGroups(d.groups); if (d.connections) setConnections(d.connections); if (d.personOrder) setPersonOrder(d.personOrder) } catch { alert('Invalid JSON file') } }
+    reader.onload = (ev) => { try { const d = JSON.parse(ev.target?.result as string); if (d.people) setPeople(d.people); if (d.groups) setGroups(d.groups); if (d.connections) setConnections(d.connections); if (d.personOrder) setPersonOrder(d.personOrder); if (d.eras) setEras(d.eras) } catch { alert('Invalid JSON file') } }
     reader.readAsText(file); e.target.value = ''
   }
 
   const exportAsPng = async () => {
     const el = exportRef.current; if (!el) return
-    try { const mod = await import('html2canvas'); const html2canvas = mod.default; const canvas = await html2canvas(el, {backgroundColor: darkMode ? '#030712' : '#ffffff', scale: 2, useCORS: true, logging: false}); const link = document.createElement('a'); link.download = 'timeline-' + new Date().toISOString().split('T')[0] + '.png'; link.href = canvas.toDataURL(); link.click() }
+    setExportingPng(true)
+    await new Promise(r => setTimeout(r, 100))
+    try { const mod = await import('html2canvas'); const html2canvas = mod.default; const scrollParent = el.closest('.overflow-y-auto'); const origHeight = scrollParent ? (scrollParent as HTMLElement).style.height : ''; const origOverflow = scrollParent ? (scrollParent as HTMLElement).style.overflow : ''; if (scrollParent) { (scrollParent as HTMLElement).style.height = 'auto'; (scrollParent as HTMLElement).style.overflow = 'visible' } const canvas = await html2canvas(el, {backgroundColor: darkMode ? '#030712' : '#ffffff', scale: 2, useCORS: true, logging: false, scrollY: -window.scrollY}); if (scrollParent) { (scrollParent as HTMLElement).style.height = origHeight; (scrollParent as HTMLElement).style.overflow = origOverflow } const link = document.createElement('a'); link.download = 'timeline-' + new Date().toISOString().split('T')[0] + '.png'; link.href = canvas.toDataURL(); link.click() }
     catch (err) { console.error(err); alert('PNG export failed. Try Export JSON instead.') }
+    finally { setExportingPng(false) }
   }
 
   const addConnection = () => {
@@ -479,9 +513,42 @@ function App() {
                 <Upload size={12} /> Import JSON
               </button>
               <input ref={fileInputRef} type="file" accept=".json" onChange={importData} className="hidden" />
-              <button onClick={exportAsPng} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
-                <Camera size={12} /> Export as PNG
+              <button onClick={exportAsPng} disabled={exportingPng} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full ${exportingPng ? 'opacity-50' : ''}`}>
+                <Camera size={12} /> {exportingPng ? 'Exporting...' : 'Export as PNG'}
               </button>
+            </div>
+            <div className={`mt-3 pt-3 border-t ${bc} space-y-1`}>
+              <div className="flex items-center justify-between px-1">
+                <span className={`text-xs ${mt} font-medium`}>Eras</span>
+                <button onClick={() => setShowEras(!showEras)} className={`p-0.5 ${hov} rounded transition-colors`}>
+                  {showEras ? <Eye size={12} className={st} /> : <EyeOff size={12} className={mt} />}
+                </button>
+              </div>
+              {eras.map(era => (
+                <div key={era.id} className={`group/era flex items-center gap-1 px-1 py-0.5 rounded text-xs ${hov}`}>
+                  <div className="w-3 h-2 rounded-sm flex-shrink-0" style={{backgroundColor: era.color}} />
+                  <span className="truncate flex-1">{era.name}</span>
+                  <span className={`${mt} text-xs flex-shrink-0`}>{formatYear(era.startYear)}-{formatYear(era.endYear)}</span>
+                  <button onClick={() => removeEra(era.id)} className="opacity-0 group-hover/era:opacity-100 p-0.5 hover:bg-red-500/20 rounded transition-all"><X size={8} className="text-red-400" /></button>
+                </div>
+              ))}
+              {showAddEra ? (
+                <div className="space-y-1 px-1">
+                  <input value={newEra.name} onChange={e => setNewEra({...newEra, name: e.target.value})} placeholder="Era name..." className={`w-full ${iBg} border ${iBo} rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500`} autoFocus />
+                  <div className="flex gap-1">
+                    <input type="number" value={newEra.startYear} onChange={e => setNewEra({...newEra, startYear: e.target.value})} placeholder="Start" className={`flex-1 ${iBg} border ${iBo} rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500`} />
+                    <input type="number" value={newEra.endYear} onChange={e => setNewEra({...newEra, endYear: e.target.value})} placeholder="End" className={`flex-1 ${iBg} border ${iBo} rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500`} />
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={addEra} className="flex-1 bg-blue-600 hover:bg-blue-700 rounded py-1 text-xs transition-colors text-white">Add</button>
+                    <button onClick={() => setShowAddEra(false)} className={`px-2 ${iBg} rounded text-xs transition-colors`}><X size={10} /></button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setShowAddEra(true)} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
+                  <Plus size={12} /> Add Era
+                </button>
+              )}
             </div>
             {connections.length > 0 && (
               <div className={`mt-3 pt-3 border-t ${bc}`}>
@@ -520,6 +587,21 @@ function App() {
 
           <div ref={timelineRef} className="flex-1 overflow-y-auto px-6 py-3" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} style={{cursor: isDragging ? 'grabbing' : 'grab'}}>
             <div ref={exportRef}>
+              {/* Eras band */}
+              {showEras && eras.length > 0 && (
+                <div className="relative h-7 mb-1">
+                  {eras.map(era => {
+                    const sp = ytp(era.startYear), ep = ytp(era.endYear)
+                    const left = Math.max(0, sp), right = Math.min(100, ep)
+                    if (right <= 0 || left >= 100) return null
+                    return <div key={era.id} className="absolute top-0 h-full rounded-sm flex items-center justify-center overflow-hidden group/era" style={{left: left + '%', width: (right - left) + '%', backgroundColor: era.color}}>
+                      <span className="text-xs font-medium truncate px-1" style={{color: darkMode ? '#fff' : '#1f2937', textShadow: darkMode ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'}}>{era.name}</span>
+                      <button onClick={() => removeEra(era.id)} className="absolute top-0 right-0 p-0.5 opacity-0 group-hover/era:opacity-100 hover:bg-red-500/30 rounded transition-all"><X size={10} className="text-red-300" /></button>
+                    </div>
+                  })}
+                </div>
+              )}
+
               {/* Tick marks header */}
               <div className={`relative h-7 mb-1 border-b ${bc}`}>
                 {getTickMarks.map(year => {
@@ -539,18 +621,30 @@ function App() {
                 })}
 
                 {/* Connection SVG lines */}
-                {showConnections && connections.map((conn, idx) => {
-                  const fp = filteredPeople.find(p => p.id === conn.fromId), tp = filteredPeople.find(p => p.id === conn.toId)
-                  if (!fp || !tp) return null
-                  const fi = filteredPeople.indexOf(fp), ti = filteredPeople.indexOf(tp)
-                  const fy = fi * (compactMode ? 40 : 80) + barH / 2, ty = ti * (compactMode ? 40 : 80) + barH / 2
-                  const fep = Math.min(100, ytp(fp.deathYear ?? new Date().getFullYear())), tsp = Math.max(0, ytp(tp.birthYear))
-                  const mx = (fep + tsp) / 2, svgH = filteredPeople.length * (compactMode ? 40 : 80) + 40
-                  return <svg key={'c-' + idx} className="absolute top-0 left-0 w-full pointer-events-none" style={{height: svgH + 'px'}}>
-                    <path d={`M ${fep}% ${fy} C ${mx}% ${fy}, ${mx}% ${ty}, ${tsp}% ${ty}`} fill="none" stroke={conn.color} strokeWidth="2" strokeDasharray="6 3" opacity="0.6" />
-                    <text x={mx + '%'} y={(fy + ty) / 2 - 4} textAnchor="middle" fill={conn.color} fontSize="10" opacity="0.8">{conn.label}</text>
+                {showConnections && (() => {
+                  const rowStep = compactMode ? 40 : 80
+                  const svgH = filteredPeople.length * rowStep + 40
+                  const vbW = 1000
+                  return <svg className="absolute top-0 left-0 w-full pointer-events-none" style={{height: svgH + 'px'}} viewBox={`0 0 ${vbW} ${svgH}`} preserveAspectRatio="none">
+                    {connections.map((conn, idx) => {
+                      const fp = filteredPeople.find(p => p.id === conn.fromId), tp = filteredPeople.find(p => p.id === conn.toId)
+                      if (!fp || !tp) return null
+                      const fi = filteredPeople.indexOf(fp), ti = filteredPeople.indexOf(tp)
+                      const fy = fi * rowStep + barH / 2, ty = ti * rowStep + barH / 2
+                      const fMidX = (ytp((fp.birthYear + (fp.deathYear ?? new Date().getFullYear())) / 2) / 100) * vbW
+                      const tMidX = (ytp((tp.birthYear + (tp.deathYear ?? new Date().getFullYear())) / 2) / 100) * vbW
+                      const midX = (fMidX + tMidX) / 2
+                      const midY = (fy + ty) / 2
+                      const cpOffsetX = Math.abs(fi - ti) * 30
+                      return <g key={'c-' + idx}>
+                        <path d={`M ${fMidX} ${fy} C ${fMidX + cpOffsetX} ${midY}, ${tMidX - cpOffsetX} ${midY}, ${tMidX} ${ty}`} fill="none" stroke={conn.color} strokeWidth="2" strokeDasharray="6 3" opacity="0.7" vectorEffect="non-scaling-stroke" />
+                        <circle cx={fMidX} cy={fy} r="4" fill={conn.color} opacity="0.9" vectorEffect="non-scaling-stroke" />
+                        <circle cx={tMidX} cy={ty} r="4" fill={conn.color} opacity="0.9" vectorEffect="non-scaling-stroke" />
+                        <text x={midX} y={midY - 8} textAnchor="middle" fill={conn.color} fontSize="11" fontWeight="bold" opacity="0.9" style={{paintOrder: 'stroke', stroke: darkMode ? '#030712' : '#ffffff', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round'}}>{conn.label}</text>
+                      </g>
+                    })}
                   </svg>
-                })}
+                })()}
 
                 {/* Person rows */}
                 {filteredPeople.map(person => {
@@ -559,17 +653,17 @@ function App() {
                   const isSel = selectedPerson?.id === person.id, isExp = expandedPersonId === person.id
                   return (
                     <div key={person.id} className="relative" style={{marginBottom: compactMode ? '4px' : '8px', height: isExp ? 'auto' : rowH + 'px'}}>
-                      {/* Name label */}
-                      <div className="absolute left-0 top-0 z-10 flex items-center" style={{height: barH + 'px'}}>
-                        <div className={(d ? 'bg-gray-900/90' : 'bg-white/90') + ' backdrop-blur-sm border rounded-md shadow-lg whitespace-nowrap ' + (compactMode ? 'px-2 py-0.5 text-xs' : 'px-3 py-1.5 text-xs font-medium')} style={{borderColor: person.color + '40', color: person.color}}>
-                          {person.name}
-                        </div>
-                      </div>
-                      {/* Life bar */}
+                      {/* Life bar with name label inline */}
                       <div className="relative flex items-center" style={{height: barH + 'px'}}>
                         <div className={'absolute ' + barTh + ' rounded-full transition-all duration-200 ' + (isSel ? 'ring-2 ring-white/30 ' + barHvTh : 'hover:' + barHvTh)}
                           style={{left: bl + '%', width: Math.max(0.5, br - bl) + '%', backgroundColor: person.color + '30', borderLeft: '3px solid ' + person.color, borderRight: person.deathYear ? '3px solid ' + person.color : 'none'}}>
                           <div className="absolute inset-0 rounded-full" style={{background: 'linear-gradient(90deg, ' + person.color + '20, ' + person.color + '40, ' + person.color + '20)'}} />
+                        </div>
+                        {/* Name label positioned at the start of the bar */}
+                        <div className="absolute z-30 flex items-center" style={{left: Math.max(0, bl) + '%', transform: 'translateX(-100%) translateX(-8px)', height: barH + 'px'}}>
+                          <div className={(d ? 'bg-gray-900/90' : 'bg-white/90') + ' backdrop-blur-sm border rounded-md shadow-lg whitespace-nowrap ' + (compactMode ? 'px-2 py-0.5 text-xs' : 'px-3 py-1.5 text-xs font-medium')} style={{borderColor: person.color + '40', color: person.color}}>
+                            {person.name}
+                          </div>
                         </div>
                         {/* Event dots */}
                         {filteredEvents(person.events).map(event => {
