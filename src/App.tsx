@@ -218,6 +218,7 @@ function App() {
   const [newEra, setNewEra] = useState({name: '', startYear: '', endYear: ''})
   const [showEras, setShowEras] = useState(true)
   const [exportingPng, setExportingPng] = useState(false)
+  const [hiddenPeopleIds, setHiddenPeopleIds] = useState<Set<string>>(new Set())
   const timelineRef = useRef<HTMLDivElement>(null)
   const exportRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -229,12 +230,31 @@ function App() {
   }, [groups])
 
   const filteredPeople = useMemo(() => {
-    let r = people.filter(p => !p.groupId || visibleGroupIds.has(p.groupId))
+    let r = people.filter(p => (!p.groupId || visibleGroupIds.has(p.groupId)) && !hiddenPeopleIds.has(p.id))
     if (sidebarSearch) { const q = sidebarSearch.toLowerCase(); r = r.filter(p => p.name.toLowerCase().includes(q)) }
     if (sortBy === 'name') r = [...r].sort((a, b) => a.name.localeCompare(b.name))
     else { const m = new Map(personOrder.map((id, i) => [id, i])); r = [...r].sort((a, b) => (m.get(a.id) ?? 999) - (m.get(b.id) ?? 999)) }
     return r
-  }, [people, sidebarSearch, sortBy, visibleGroupIds, personOrder])
+  }, [people, sidebarSearch, sortBy, visibleGroupIds, personOrder, hiddenPeopleIds])
+
+  const togglePersonVisibility = (pid: string) => {
+    setHiddenPeopleIds(prev => { const n = new Set(prev); n.has(pid) ? n.delete(pid) : n.add(pid); return n })
+  }
+
+  const eraRows = useMemo(() => {
+    const sorted = [...eras].sort((a, b) => a.startYear - b.startYear)
+    const rows: Era[][] = []
+    for (const era of sorted) {
+      let placed = false
+      for (const row of rows) {
+        if (row.every(e => era.startYear >= e.endYear || era.endYear <= e.startYear)) {
+          row.push(era); placed = true; break
+        }
+      }
+      if (!placed) rows.push([era])
+    }
+    return rows
+  }, [eras])
 
   const tw = useMemo(() => viewEnd - viewStart, [viewStart, viewEnd])
   const ytp = useCallback((year: number) => ((year - viewStart) / tw) * 100, [viewStart, tw])
@@ -420,7 +440,7 @@ function App() {
           <div className="flex-1 overflow-y-auto p-2">
             <div className="space-y-1 mb-2">
               {groups.map(group => {
-                const gp = filteredPeople.filter(p => p.groupId === group.id)
+                const gp = people.filter(p => p.groupId === group.id)
                 const collapsed = collapsedGroups.has(group.id)
                 return (
                   <div key={group.id}>
@@ -452,9 +472,12 @@ function App() {
                               {sortBy === 'custom' && <GripVertical size={10} className={`${mt} flex-shrink-0 cursor-grab`} />}
                               <div className="w-2 h-2 rounded-full flex-shrink-0" style={{backgroundColor: person.color}} />
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium truncate">{person.name}</p>
+                                <p className={`text-xs font-medium truncate ${hiddenPeopleIds.has(person.id) ? 'line-through opacity-50' : ''}`}>{person.name}</p>
                                 <p className={`text-xs ${mt}`}>{formatYear(person.birthYear)} - {person.deathYear ? formatYear(person.deathYear) : 'Present'}</p>
                               </div>
+                              <button onClick={e => { e.stopPropagation(); togglePersonVisibility(person.id) }} className={`p-0.5 ${hov} rounded transition-colors flex-shrink-0`} title={hiddenPeopleIds.has(person.id) ? 'Show' : 'Hide'}>
+                                {hiddenPeopleIds.has(person.id) ? <EyeOff size={10} className={mt} /> : <Eye size={10} className={st} />}
+                              </button>
                               <button onClick={e => { e.stopPropagation(); removePerson(person.id) }} className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded transition-all">
                                 <Trash2 size={10} className="text-red-400" />
                               </button>
@@ -467,11 +490,11 @@ function App() {
                 )
               })}
             </div>
-            {filteredPeople.filter(p => !p.groupId).length > 0 && (
+            {people.filter(p => !p.groupId).length > 0 && (
               <div className="mb-2">
                 <div className={`px-1 py-1 text-xs ${mt} font-medium`}>Ungrouped</div>
                 <div className="space-y-0.5">
-                  {filteredPeople.filter(p => !p.groupId).map(person => (
+                  {people.filter(p => !p.groupId).map(person => (
                     <div key={person.id} draggable={sortBy === 'custom'} onDragStart={() => handleDragStart(person.id)} onDragOver={e => handleDragOver(e, person.id)} onDragEnd={handleDragEnd}
                       className={`group rounded-lg px-2.5 py-1.5 cursor-pointer transition-all ${selectedPerson?.id === person.id ? cBg + ' ring-1 ' + (d ? 'ring-gray-700' : 'ring-gray-300') : hov} ${dragPersonId === person.id ? 'opacity-50' : ''}`}
                       onClick={() => setSelectedPerson(selectedPerson?.id === person.id ? null : person)}>
@@ -479,9 +502,12 @@ function App() {
                         {sortBy === 'custom' && <GripVertical size={10} className={`${mt} flex-shrink-0 cursor-grab`} />}
                         <div className="w-2 h-2 rounded-full flex-shrink-0" style={{backgroundColor: person.color}} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{person.name}</p>
+                          <p className={`text-xs font-medium truncate ${hiddenPeopleIds.has(person.id) ? 'line-through opacity-50' : ''}`}>{person.name}</p>
                           <p className={`text-xs ${mt}`}>{formatYear(person.birthYear)} - {person.deathYear ? formatYear(person.deathYear) : 'Present'}</p>
                         </div>
+                        <button onClick={e => { e.stopPropagation(); togglePersonVisibility(person.id) }} className={`p-0.5 ${hov} rounded transition-colors flex-shrink-0`} title={hiddenPeopleIds.has(person.id) ? 'Show' : 'Hide'}>
+                          {hiddenPeopleIds.has(person.id) ? <EyeOff size={10} className={mt} /> : <Eye size={10} className={st} />}
+                        </button>
                         <button onClick={e => { e.stopPropagation(); removePerson(person.id) }} className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded transition-all">
                           <Trash2 size={10} className="text-red-400" />
                         </button>
@@ -589,16 +615,16 @@ function App() {
             <div ref={exportRef}>
               {/* Eras band */}
               {showEras && eras.length > 0 && (
-                <div className="relative h-7 mb-1">
-                  {eras.map(era => {
+                <div className="relative mb-1" style={{height: (eraRows.length * 28) + 'px'}}>
+                  {eraRows.map((row, rowIdx) => row.map(era => {
                     const sp = ytp(era.startYear), ep = ytp(era.endYear)
                     const left = Math.max(0, sp), right = Math.min(100, ep)
                     if (right <= 0 || left >= 100) return null
-                    return <div key={era.id} className="absolute top-0 h-full rounded-sm flex items-center justify-center overflow-hidden group/era" style={{left: left + '%', width: (right - left) + '%', backgroundColor: era.color}}>
+                    return <div key={era.id} className="absolute rounded-sm flex items-center justify-center overflow-hidden group/era" style={{left: left + '%', width: (right - left) + '%', top: (rowIdx * 28) + 'px', height: '24px', backgroundColor: era.color}}>
                       <span className="text-xs font-medium truncate px-1" style={{color: darkMode ? '#fff' : '#1f2937', textShadow: darkMode ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'}}>{era.name}</span>
                       <button onClick={() => removeEra(era.id)} className="absolute top-0 right-0 p-0.5 opacity-0 group-hover/era:opacity-100 hover:bg-red-500/30 rounded transition-all"><X size={10} className="text-red-300" /></button>
                     </div>
-                  })}
+                  }))}
                 </div>
               )}
 
