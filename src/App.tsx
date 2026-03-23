@@ -19,7 +19,7 @@ interface Person {
   color: string
   events: LifeEvent[]
   description: string
-  groupId?: string
+  groupIds?: string[]
   notes?: string
 }
 
@@ -74,7 +74,7 @@ const initialConnections: Connection[] = [
 ]
 
 const initialPeople: Person[] = [
-  { id: '1', name: 'Albert Einstein', birthYear: 1879, deathYear: 1955, color: '#3b82f6', description: 'Theoretical physicist who developed the theory of relativity', groupId: 'g1', notes: 'His mass-energy equivalence formula E=mc2 is one of the most famous equations in physics.', events: [
+  { id: '1', name: 'Albert Einstein', birthYear: 1879, deathYear: 1955, color: '#3b82f6', description: 'Theoretical physicist who developed the theory of relativity', groupIds: ['g1'], notes: 'His mass-energy equivalence formula E=mc2 is one of the most famous equations in physics.', events: [
     { id: 'e1', year: 1879, title: 'Born in Ulm', description: 'Born in Ulm, Kingdom of Wurttemberg, German Empire', category: 'birth' },
     { id: 'e2', year: 1896, title: 'Entered ETH Zurich', description: 'Enrolled at the Swiss Federal Polytechnic School in Zurich', category: 'education' },
     { id: 'e3', year: 1905, title: 'Annus Mirabilis Papers', description: 'Published four groundbreaking papers including special relativity and E=mc2', category: 'achievement' },
@@ -84,7 +84,7 @@ const initialPeople: Person[] = [
     { id: 'e7', year: 1940, title: 'US Citizenship', description: 'Became a United States citizen', category: 'personal' },
     { id: 'e8', year: 1955, title: 'Died in Princeton', description: 'Died at Princeton Hospital, New Jersey', category: 'death' },
   ]},
-  { id: '2', name: 'Marie Curie', birthYear: 1867, deathYear: 1934, color: '#ef4444', description: 'Physicist and chemist, pioneer in radioactivity research', groupId: 'g1', notes: 'First woman to win a Nobel Prize and the only person to win in two different sciences.', events: [
+  { id: '2', name: 'Marie Curie', birthYear: 1867, deathYear: 1934, color: '#ef4444', description: 'Physicist and chemist, pioneer in radioactivity research', groupIds: ['g1'], notes: 'First woman to win a Nobel Prize and the only person to win in two different sciences.', events: [
     { id: 'e9', year: 1867, title: 'Born in Warsaw', description: 'Born Maria Sklodowska in Warsaw, Russian Empire', category: 'birth' },
     { id: 'e10', year: 1891, title: 'Moved to Paris', description: 'Enrolled at the University of Paris to study physics', category: 'education' },
     { id: 'e11', year: 1895, title: 'Married Pierre Curie', description: 'Married fellow physicist Pierre Curie', category: 'personal' },
@@ -94,7 +94,7 @@ const initialPeople: Person[] = [
     { id: 'e15', year: 1911, title: 'Nobel Prize in Chemistry', description: 'Second Nobel Prize, first person to win in two different sciences', category: 'achievement' },
     { id: 'e16', year: 1934, title: 'Died in Savoy', description: 'Died of aplastic anemia from radiation exposure', category: 'death' },
   ]},
-  { id: '3', name: 'Leonardo da Vinci', birthYear: 1452, deathYear: 1519, color: '#10b981', description: 'Renaissance polymath: painter, sculptor, architect, scientist, and inventor', groupId: 'g2', notes: 'Leonardo kept extensive notebooks spanning roughly 13,000 pages.', events: [
+  { id: '3', name: 'Leonardo da Vinci', birthYear: 1452, deathYear: 1519, color: '#10b981', description: 'Renaissance polymath: painter, sculptor, architect, scientist, and inventor', groupIds: ['g2'], notes: 'Leonardo kept extensive notebooks spanning roughly 13,000 pages.', events: [
     { id: 'e17', year: 1452, title: 'Born in Vinci', description: 'Born in Vinci, Republic of Florence', category: 'birth' },
     { id: 'e18', year: 1466, title: 'Apprenticed to Verrocchio', description: 'Began apprenticeship with artist Andrea del Verrocchio in Florence', category: 'education' },
     { id: 'e19', year: 1482, title: 'Moved to Milan', description: 'Entered the service of Ludovico Sforza, Duke of Milan', category: 'career' },
@@ -103,14 +103,14 @@ const initialPeople: Person[] = [
     { id: 'e22', year: 1503, title: 'Mona Lisa', description: 'Began painting the Mona Lisa', category: 'achievement', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/400px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg' },
     { id: 'e23', year: 1519, title: 'Died in Amboise', description: 'Died at Chateau du Clos Luce, Amboise, France', category: 'death' },
   ]},
-  { id: '4', name: 'Ada Lovelace', birthYear: 1815, deathYear: 1852, color: '#f59e0b', description: 'Mathematician, recognized as the first computer programmer', groupId: 'g1', notes: 'She wrote what is considered the first algorithm intended to be carried out by a machine.', events: [
+  { id: '4', name: 'Ada Lovelace', birthYear: 1815, deathYear: 1852, color: '#f59e0b', description: 'Mathematician, recognized as the first computer programmer', groupIds: ['g1'], notes: 'She wrote what is considered the first algorithm intended to be carried out by a machine.', events: [
     { id: 'e24', year: 1815, title: 'Born in London', description: 'Born Augusta Ada Byron, daughter of Lord Byron', category: 'birth' },
     { id: 'e25', year: 1833, title: 'Met Charles Babbage', description: 'Introduced to Charles Babbage and his Difference Engine', category: 'career' },
     { id: 'e26', year: 1835, title: 'Married Lord King', description: 'Married William King, later Earl of Lovelace', category: 'personal' },
     { id: 'e27', year: 1843, title: 'Published Algorithm', description: 'Published the first computer algorithm for Babbage\'s Analytical Engine', category: 'achievement', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ada_Lovelace_portrait.jpg/440px-Ada_Lovelace_portrait.jpg' },
     { id: 'e28', year: 1852, title: 'Died in London', description: 'Died of uterine cancer at age 36', category: 'death' },
   ]},
-  { id: '5', name: 'Nikola Tesla', birthYear: 1856, deathYear: 1943, color: '#8b5cf6', description: 'Inventor, electrical engineer, and futurist known for AC power', groupId: 'g1', notes: 'Tesla held over 300 patents and developed the AC electrical system used worldwide.', events: [
+  { id: '5', name: 'Nikola Tesla', birthYear: 1856, deathYear: 1943, color: '#8b5cf6', description: 'Inventor, electrical engineer, and futurist known for AC power', groupIds: ['g1'], notes: 'Tesla held over 300 patents and developed the AC electrical system used worldwide.', events: [
     { id: 'e29', year: 1856, title: 'Born in Smiljan', description: 'Born in Smiljan, Austrian Empire (modern Croatia)', category: 'birth' },
     { id: 'e30', year: 1884, title: 'Arrived in America', description: 'Emigrated to the United States', category: 'personal' },
     { id: 'e31', year: 1887, title: 'Tesla Electric Company', description: 'Founded his own company for electrical equipment', category: 'career' },
@@ -120,7 +120,7 @@ const initialPeople: Person[] = [
     { id: 'e35', year: 1899, title: 'Colorado Springs Lab', description: 'Conducted high-voltage, high-frequency experiments', category: 'career' },
     { id: 'e36', year: 1943, title: 'Died in New York', description: 'Died alone at the New Yorker Hotel, Manhattan', category: 'death' },
   ]},
-  { id: '6', name: 'Frida Kahlo', birthYear: 1907, deathYear: 1954, color: '#ec4899', description: 'Mexican artist known for self-portraits and works inspired by nature', groupId: 'g2', notes: 'She painted 55 self-portraits, celebrated as emblematic of Mexican traditions.', events: [
+  { id: '6', name: 'Frida Kahlo', birthYear: 1907, deathYear: 1954, color: '#ec4899', description: 'Mexican artist known for self-portraits and works inspired by nature', groupIds: ['g2'], notes: 'She painted 55 self-portraits, celebrated as emblematic of Mexican traditions.', events: [
     { id: 'e37', year: 1907, title: 'Born in Coyoacan', description: 'Born in Mexico City', category: 'birth' },
     { id: 'e38', year: 1925, title: 'Bus Accident', description: 'Suffered near-fatal bus accident that shaped her life and art', category: 'personal' },
     { id: 'e39', year: 1929, title: 'Married Diego Rivera', description: 'Married muralist Diego Rivera', category: 'personal' },
@@ -129,7 +129,7 @@ const initialPeople: Person[] = [
     { id: 'e42', year: 1953, title: 'Solo Exhibition in Mexico', description: 'First solo exhibition in Mexico, attended on her hospital bed', category: 'achievement' },
     { id: 'e43', year: 1954, title: 'Died in Coyoacan', description: 'Died at La Casa Azul, her family home', category: 'death' },
   ]},
-  { id: '7', name: 'Isaac Newton', birthYear: 1643, deathYear: 1727, color: '#06b6d4', description: 'Mathematician, physicist, and astronomer who formulated the laws of motion', groupId: 'g1', notes: 'Newton\'s Principia formulated the laws of motion and universal gravitation.', events: [
+  { id: '7', name: 'Isaac Newton', birthYear: 1643, deathYear: 1727, color: '#06b6d4', description: 'Mathematician, physicist, and astronomer who formulated the laws of motion', groupIds: ['g1'], notes: 'Newton\'s Principia formulated the laws of motion and universal gravitation.', events: [
     { id: 'e44', year: 1643, title: 'Born in Woolsthorpe', description: 'Born in Woolsthorpe Manor, Lincolnshire, England', category: 'birth' },
     { id: 'e45', year: 1661, title: 'Entered Cambridge', description: 'Admitted to Trinity College, Cambridge', category: 'education' },
     { id: 'e46', year: 1666, title: 'Annus Mirabilis', description: 'Developed calculus, optics theories, and law of gravitation', category: 'achievement' },
@@ -137,14 +137,14 @@ const initialPeople: Person[] = [
     { id: 'e48', year: 1703, title: 'President of Royal Society', description: 'Elected President of the Royal Society', category: 'career' },
     { id: 'e49', year: 1727, title: 'Died in London', description: 'Died in his sleep in London', category: 'death' },
   ]},
-  { id: '8', name: 'Cleopatra VII', birthYear: -69, deathYear: -30, color: '#f97316', description: 'Last active ruler of the Ptolemaic Kingdom of Egypt', groupId: 'g3', notes: 'She spoke multiple languages and was known for her intelligence and political acumen.', events: [
+  { id: '8', name: 'Cleopatra VII', birthYear: -69, deathYear: -30, color: '#f97316', description: 'Last active ruler of the Ptolemaic Kingdom of Egypt', groupIds: ['g3'], notes: 'She spoke multiple languages and was known for her intelligence and political acumen.', events: [
     { id: 'e50', year: -69, title: 'Born in Alexandria', description: 'Born in Alexandria, Ptolemaic Kingdom of Egypt', category: 'birth' },
     { id: 'e51', year: -51, title: 'Became Pharaoh', description: 'Ascended to the throne as co-ruler with her brother', category: 'career' },
     { id: 'e52', year: -48, title: 'Alliance with Caesar', description: 'Formed a political and romantic alliance with Julius Caesar', category: 'personal' },
     { id: 'e53', year: -41, title: 'Met Mark Antony', description: 'Began alliance with Roman general Mark Antony', category: 'personal' },
     { id: 'e54', year: -30, title: 'Died in Alexandria', description: 'Died by suicide after the fall of Egypt to Rome', category: 'death' },
   ]},
-  { id: '9', name: 'Mozart', birthYear: 1756, deathYear: 1791, color: '#14b8a6', description: 'Prolific and influential composer of the Classical period', groupId: 'g2', notes: 'Mozart composed more than 600 works.', events: [
+  { id: '9', name: 'Mozart', birthYear: 1756, deathYear: 1791, color: '#14b8a6', description: 'Prolific and influential composer of the Classical period', groupIds: ['g2'], notes: 'Mozart composed more than 600 works.', events: [
     { id: 'e55', year: 1756, title: 'Born in Salzburg', description: 'Born Wolfgang Amadeus Mozart in Salzburg, Austria', category: 'birth' },
     { id: 'e56', year: 1762, title: 'First European Tour', description: 'Began touring European courts as a child prodigy at age 6', category: 'career' },
     { id: 'e57', year: 1770, title: 'Italian Journey', description: 'Toured Italy, studying opera and gaining fame', category: 'education' },
@@ -153,7 +153,7 @@ const initialPeople: Person[] = [
     { id: 'e60', year: 1791, title: 'The Magic Flute', description: 'Composed The Magic Flute and began the Requiem', category: 'achievement' },
     { id: 'e61', year: 1791, title: 'Died in Vienna', description: 'Died in Vienna at age 35 under mysterious circumstances', category: 'death' },
   ]},
-  { id: '10', name: 'Martin Luther King Jr.', birthYear: 1929, deathYear: 1968, color: '#6366f1', description: 'American civil rights leader and Nobel Peace Prize laureate', groupId: 'g3', notes: 'King advanced civil rights through nonviolence and civil disobedience.', events: [
+  { id: '10', name: 'Martin Luther King Jr.', birthYear: 1929, deathYear: 1968, color: '#6366f1', description: 'American civil rights leader and Nobel Peace Prize laureate', groupIds: ['g3'], notes: 'King advanced civil rights through nonviolence and civil disobedience.', events: [
     { id: 'e62', year: 1929, title: 'Born in Atlanta', description: 'Born Michael King Jr. in Atlanta, Georgia', category: 'birth' },
     { id: 'e63', year: 1955, title: 'Montgomery Bus Boycott', description: 'Led the 381-day bus boycott in Montgomery, Alabama', category: 'achievement' },
     { id: 'e64', year: 1963, title: 'I Have a Dream', description: 'Delivered iconic speech at the March on Washington', category: 'achievement' },
@@ -161,7 +161,7 @@ const initialPeople: Person[] = [
     { id: 'e66', year: 1964, title: 'Civil Rights Act', description: 'Helped secure passage of the Civil Rights Act of 1964', category: 'achievement' },
     { id: 'e67', year: 1968, title: 'Assassinated in Memphis', description: 'Assassinated at the Lorraine Motel in Memphis, Tennessee', category: 'death' },
   ]},
-  { id: '11', name: 'Galileo Galilei', birthYear: 1564, deathYear: 1642, color: '#84cc16', description: 'Italian astronomer, physicist, and father of modern observational astronomy', groupId: 'g1', notes: 'Called the father of observational astronomy and modern physics.', events: [
+  { id: '11', name: 'Galileo Galilei', birthYear: 1564, deathYear: 1642, color: '#84cc16', description: 'Italian astronomer, physicist, and father of modern observational astronomy', groupIds: ['g1'], notes: 'Called the father of observational astronomy and modern physics.', events: [
     { id: 'e68', year: 1564, title: 'Born in Pisa', description: 'Born in Pisa, Duchy of Florence', category: 'birth' },
     { id: 'e69', year: 1589, title: 'Professor at Pisa', description: 'Appointed professor of mathematics at the University of Pisa', category: 'career' },
     { id: 'e70', year: 1609, title: 'Improved Telescope', description: 'Built an improved telescope and began astronomical observations', category: 'achievement' },
@@ -169,7 +169,7 @@ const initialPeople: Person[] = [
     { id: 'e72', year: 1633, title: 'Trial by Inquisition', description: 'Found guilty of heresy for supporting heliocentrism', category: 'personal' },
     { id: 'e73', year: 1642, title: 'Died in Arcetri', description: 'Died under house arrest in Arcetri, near Florence', category: 'death' },
   ]},
-  { id: '12', name: 'Queen Victoria', birthYear: 1819, deathYear: 1901, color: '#e11d48', description: 'Queen of the United Kingdom, longest-reigning British monarch of the 19th century', groupId: 'g3', notes: 'Her reign of 63 years is known as the Victorian era.', events: [
+  { id: '12', name: 'Queen Victoria', birthYear: 1819, deathYear: 1901, color: '#e11d48', description: 'Queen of the United Kingdom, longest-reigning British monarch of the 19th century', groupIds: ['g3'], notes: 'Her reign of 63 years is known as the Victorian era.', events: [
     { id: 'e74', year: 1819, title: 'Born at Kensington', description: 'Born at Kensington Palace, London', category: 'birth' },
     { id: 'e75', year: 1837, title: 'Became Queen', description: 'Ascended to the throne at age 18', category: 'career' },
     { id: 'e76', year: 1840, title: 'Married Prince Albert', description: 'Married her cousin Prince Albert of Saxe-Coburg', category: 'personal' },
@@ -194,7 +194,7 @@ function App() {
   const [dragStartView, setDragStartView] = useState({start: 0, end: 0})
   const [showAddPerson, setShowAddPerson] = useState(false)
   const [editingPerson, setEditingPerson] = useState<Person | null>(null)
-  const [newPerson, setNewPerson] = useState({name: '', birthYear: '', deathYear: '', description: '', groupId: '', notes: ''})
+  const [newPerson, setNewPerson] = useState({name: '', birthYear: '', deathYear: '', description: '', groupIds: [] as string[], notes: ''})
   const [showAddEvent, setShowAddEvent] = useState<string | null>(null)
   const [newEvent, setNewEvent] = useState({year: '', title: '', description: '', category: 'other' as LifeEvent['category'], imageUrl: ''})
   const [editingEvent, setEditingEvent] = useState<{personId: string, event: LifeEvent} | null>(null)
@@ -231,7 +231,7 @@ function App() {
   }, [groups])
 
   const filteredPeople = useMemo(() => {
-    let r = people.filter(p => (!p.groupId || visibleGroupIds.has(p.groupId)) && !hiddenPeopleIds.has(p.id))
+    let r = people.filter(p => (!p.groupIds?.length || p.groupIds.some(gid => visibleGroupIds.has(gid))) && !hiddenPeopleIds.has(p.id))
     if (sidebarSearch) { const q = sidebarSearch.toLowerCase(); r = r.filter(p => p.name.toLowerCase().includes(q)) }
     if (sortBy === 'name') r = [...r].sort((a, b) => a.name.localeCompare(b.name))
     else if (sortBy === 'birth') r = [...r].sort((a, b) => a.birthYear - b.birthYear)
@@ -297,8 +297,8 @@ function App() {
     if (!newPerson.name || !newPerson.birthYear) return
     const by = parseInt(newPerson.birthYear), dy = newPerson.deathYear ? parseInt(newPerson.deathYear) : null
     if (isNaN(by)) return
-    const p: Person = { id: genId(), name: newPerson.name, birthYear: by, deathYear: dy, color: PERSON_COLORS[people.length % PERSON_COLORS.length], description: newPerson.description, groupId: newPerson.groupId || undefined, notes: newPerson.notes || undefined, events: [{ id: genId(), year: by, title: 'Born', description: newPerson.name + ' was born', category: 'birth' }, ...(dy ? [{ id: genId(), year: dy, title: 'Died', description: newPerson.name + ' died', category: 'death' as const }] : [])] }
-    setPeople([...people, p]); setPersonOrder([...personOrder, p.id]); setNewPerson({name: '', birthYear: '', deathYear: '', description: '', groupId: '', notes: ''}); setShowAddPerson(false)
+    const p: Person = { id: genId(), name: newPerson.name, birthYear: by, deathYear: dy, color: PERSON_COLORS[people.length % PERSON_COLORS.length], description: newPerson.description, groupIds: newPerson.groupIds.length ? newPerson.groupIds : undefined, notes: newPerson.notes || undefined, events: [{ id: genId(), year: by, title: 'Born', description: newPerson.name + ' was born', category: 'birth' }, ...(dy ? [{ id: genId(), year: dy, title: 'Died', description: newPerson.name + ' died', category: 'death' as const }] : [])] }
+    setPeople([...people, p]); setPersonOrder([...personOrder, p.id]); setNewPerson({name: '', birthYear: '', deathYear: '', description: '', groupIds: [], notes: ''}); setShowAddPerson(false)
   }
 
   const removePerson = (id: string) => {
@@ -323,7 +323,7 @@ function App() {
 
   const toggleGroupVis = (gid: string) => setGroups(groups.map(g => g.id === gid ? { ...g, visible: !g.visible } : g))
   const addGroup = () => { if (!newGroupName.trim()) return; setGroups([...groups, { id: genId(), name: newGroupName.trim(), visible: true, color: GROUP_COLORS[groups.length % GROUP_COLORS.length] }]); setNewGroupName(''); setShowAddGroup(false) }
-  const deleteGroup = (gid: string) => { setGroups(groups.filter(g => g.id !== gid)); setPeople(people.map(p => p.groupId === gid ? { ...p, groupId: undefined } : p)) }
+  const deleteGroup = (gid: string) => { setGroups(groups.filter(g => g.id !== gid)); setPeople(people.map(p => p.groupIds?.includes(gid) ? { ...p, groupIds: p.groupIds.filter(id => id !== gid).length ? p.groupIds.filter(id => id !== gid) : undefined } : p)) }
   const saveGroupName = (gid: string) => { if (!editingGroupName.trim()) return; setGroups(groups.map(g => g.id === gid ? { ...g, name: editingGroupName.trim() } : g)); setEditingGroupId(null) }
   const toggleCollapseGroup = (gid: string) => { setCollapsedGroups(prev => { const n = new Set(prev); n.has(gid) ? n.delete(gid) : n.add(gid); return n }) }
   const formatYear = (y: number) => y < 0 ? Math.abs(y) + ' BC' : '' + y
@@ -448,7 +448,7 @@ function App() {
           <div className="flex-1 overflow-y-auto p-2">
             <div className="space-y-1 mb-2">
               {groups.map(group => {
-                const gp = people.filter(p => p.groupId === group.id)
+                const gp = people.filter(p => p.groupIds?.includes(group.id))
                 const collapsed = collapsedGroups.has(group.id)
                 return (
                   <div key={group.id}>
@@ -501,11 +501,11 @@ function App() {
                 )
               })}
             </div>
-            {people.filter(p => !p.groupId).length > 0 && (
+            {people.filter(p => !p.groupIds?.length).length > 0 && (
               <div className="mb-2">
                 <div className={`px-1 py-1 text-xs ${mt} font-medium`}>Ungrouped</div>
                 <div className="space-y-0.5">
-                  {people.filter(p => !p.groupId).map(person => (
+                  {people.filter(p => !p.groupIds?.length).map(person => (
                     <div key={person.id} draggable={sortBy === 'custom'} onDragStart={() => handleDragStart(person.id)} onDragOver={e => handleDragOver(e, person.id)} onDragEnd={handleDragEnd}
                       className={`group rounded-lg px-2.5 py-1.5 cursor-pointer transition-all ${selectedPerson?.id === person.id ? cBg + ' ring-1 ' + (d ? 'ring-gray-700' : 'ring-gray-300') : hov} ${dragPersonId === person.id ? 'opacity-50' : ''}`}
                       onClick={() => setSelectedPerson(selectedPerson?.id === person.id ? null : person)}>
@@ -851,10 +851,12 @@ function App() {
               </div>
               <textarea placeholder="Short description (optional)" value={newPerson.description} onChange={e => setNewPerson({...newPerson, description: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-16`} />
               <textarea placeholder="Notes (optional) - additional details, fun facts, references..." value={newPerson.notes} onChange={e => setNewPerson({...newPerson, notes: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-16`} />
-              <select value={newPerson.groupId} onChange={e => setNewPerson({...newPerson, groupId: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}>
-                <option value="">No Group</option>
-                {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-              </select>
+              <div>
+                <label className={`text-xs ${mt} mb-1 block`}>Groups</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {groups.map(g => <button key={g.id} type="button" onClick={() => setNewPerson({...newPerson, groupIds: newPerson.groupIds.includes(g.id) ? newPerson.groupIds.filter(id => id !== g.id) : [...newPerson.groupIds, g.id]})} className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${newPerson.groupIds.includes(g.id) ? 'text-white border-transparent' : mt + ' ' + iBo}`} style={newPerson.groupIds.includes(g.id) ? {backgroundColor: g.color} : {}}>{g.name}</button>)}
+                </div>
+              </div>
               <button onClick={addPerson} disabled={!newPerson.name || !newPerson.birthYear} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-white">Add to Timeline</button>
             </div>
           </div>
@@ -877,10 +879,12 @@ function App() {
               </div>
               <textarea placeholder="Short description" value={editingPerson.description} onChange={e => setEditingPerson({...editingPerson, description: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-16`} />
               <textarea placeholder="Notes (optional)" value={editingPerson.notes || ''} onChange={e => setEditingPerson({...editingPerson, notes: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-16`} />
-              <select value={editingPerson.groupId || ''} onChange={e => setEditingPerson({...editingPerson, groupId: e.target.value || undefined})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}>
-                <option value="">No Group</option>
-                {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-              </select>
+              <div>
+                <label className={`text-xs ${mt} mb-1 block`}>Groups</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {groups.map(g => <button key={g.id} type="button" onClick={() => { const gids = editingPerson.groupIds || []; setEditingPerson({...editingPerson, groupIds: gids.includes(g.id) ? gids.filter(id => id !== g.id) : [...gids, g.id]}) }} className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${(editingPerson.groupIds || []).includes(g.id) ? 'text-white border-transparent' : mt + ' ' + iBo}`} style={(editingPerson.groupIds || []).includes(g.id) ? {backgroundColor: g.color} : {}}>{g.name}</button>)}
+                </div>
+              </div>
               <div className="flex items-center gap-2">
                 <label className={'text-sm ' + st}>Color:</label>
                 <div className="flex gap-1.5 flex-wrap">
