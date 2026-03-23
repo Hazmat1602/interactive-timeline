@@ -646,31 +646,29 @@ function App() {
                   return <div key={'g-' + year} className={`absolute top-0 bottom-0 w-px ${gl}`} style={{left: pct + '%', height: (filteredPeople.length * (compactMode ? 40 : 80) + 40) + 'px'}} />
                 })}
 
-                {/* Connection SVG lines */}
-                {showConnections && (() => {
+                {/* Connection lines rendered as absolutely positioned divs with SVG */}
+                {showConnections && connections.map((conn, idx) => {
+                  const fp = filteredPeople.find(p => p.id === conn.fromId), tp = filteredPeople.find(p => p.id === conn.toId)
+                  if (!fp || !tp) return null
+                  const fi = filteredPeople.indexOf(fp), ti = filteredPeople.indexOf(tp)
                   const rowStep = compactMode ? 40 : 80
+                  const fy = fi * rowStep + barH / 2, ty = ti * rowStep + barH / 2
                   const svgH = filteredPeople.length * rowStep + 40
-                  const vbW = 1000
-                  return <svg className="absolute top-0 left-0 w-full pointer-events-none" style={{height: svgH + 'px'}} viewBox={`0 0 ${vbW} ${svgH}`} preserveAspectRatio="none">
-                    {connections.map((conn, idx) => {
-                      const fp = filteredPeople.find(p => p.id === conn.fromId), tp = filteredPeople.find(p => p.id === conn.toId)
-                      if (!fp || !tp) return null
-                      const fi = filteredPeople.indexOf(fp), ti = filteredPeople.indexOf(tp)
-                      const fy = fi * rowStep + barH / 2, ty = ti * rowStep + barH / 2
-                      const fMidX = (ytp((fp.birthYear + (fp.deathYear ?? new Date().getFullYear())) / 2) / 100) * vbW
-                      const tMidX = (ytp((tp.birthYear + (tp.deathYear ?? new Date().getFullYear())) / 2) / 100) * vbW
-                      const midX = (fMidX + tMidX) / 2
-                      const midY = (fy + ty) / 2
-                      const cpOffsetX = Math.abs(fi - ti) * 30
-                      return <g key={'c-' + idx}>
-                        <path d={`M ${fMidX} ${fy} C ${fMidX + cpOffsetX} ${midY}, ${tMidX - cpOffsetX} ${midY}, ${tMidX} ${ty}`} fill="none" stroke={conn.color} strokeWidth="2" strokeDasharray="6 3" opacity="0.7" vectorEffect="non-scaling-stroke" />
-                        <circle cx={fMidX} cy={fy} r="4" fill={conn.color} opacity="0.9" vectorEffect="non-scaling-stroke" />
-                        <circle cx={tMidX} cy={ty} r="4" fill={conn.color} opacity="0.9" vectorEffect="non-scaling-stroke" />
-                        <text x={midX} y={midY - 8} textAnchor="middle" fill={conn.color} fontSize="11" fontWeight="bold" opacity="0.9" style={{paintOrder: 'stroke', stroke: darkMode ? '#030712' : '#ffffff', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round'}}>{conn.label}</text>
-                      </g>
-                    })}
-                  </svg>
-                })()}
+                  const fromEndPct = Math.min(100, ytp(fp.deathYear ?? new Date().getFullYear()))
+                  const toStartPct = Math.max(0, ytp(tp.birthYear))
+                  const midPct = (fromEndPct + toStartPct) / 2
+                  const midY = (fy + ty) / 2
+                  return <div key={'conn-' + idx} className="absolute top-0 left-0 w-full pointer-events-none" style={{height: svgH + 'px', zIndex: 5}}>
+                    <svg className="absolute top-0 left-0 w-full h-full" style={{overflow: 'visible'}}>
+                      <line x1={fromEndPct + '%'} y1={fy} x2={toStartPct + '%'} y2={ty} stroke={conn.color} strokeWidth="2" strokeDasharray="6 3" opacity="0.7" />
+                      <circle cx={fromEndPct + '%'} cy={fy} r="5" fill={conn.color} opacity="0.9" />
+                      <circle cx={toStartPct + '%'} cy={ty} r="5" fill={conn.color} opacity="0.9" />
+                    </svg>
+                    <div className="absolute pointer-events-none" style={{left: midPct + '%', top: midY - 10, transform: 'translateX(-50%)', zIndex: 40}}>
+                      <span className="text-xs font-bold whitespace-nowrap px-1.5 py-0.5 rounded" style={{color: conn.color, backgroundColor: darkMode ? 'rgba(3,7,18,0.85)' : 'rgba(255,255,255,0.9)', border: '1px solid ' + conn.color + '40'}}>{conn.label}</span>
+                    </div>
+                  </div>
+                })}
 
                 {/* Person rows */}
                 {filteredPeople.map(person => {
