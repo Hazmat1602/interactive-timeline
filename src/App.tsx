@@ -675,7 +675,7 @@ function App() {
                     return { conn, fromEndX, toStartX, fy, ty, cp1x, cp1y, cp2x, cp2y, midPct, midY }
                   }).filter(Boolean) as { conn: typeof connections[0], fromEndX: number, toStartX: number, fy: number, ty: number, cp1x: number, cp1y: number, cp2x: number, cp2y: number, midPct: number, midY: number }[]
                   return <>
-                    <svg className="absolute top-0 left-0 w-full pointer-events-none" style={{height: svgH + 'px', zIndex: 5, overflow: 'visible'}} viewBox={`0 0 ${vbW} ${svgH}`} preserveAspectRatio="none">
+                    <svg className="absolute top-0 left-0 w-full pointer-events-none" style={{height: svgH + 'px', zIndex: 1, overflow: 'visible'}} viewBox={`0 0 ${vbW} ${svgH}`} preserveAspectRatio="none">
                       {connData.map((cd, idx) => (
                         <g key={'c-' + idx}>
                           <path d={`M ${cd.fromEndX} ${cd.fy} C ${cd.cp1x} ${cd.cp1y}, ${cd.cp2x} ${cd.cp2y}, ${cd.toStartX} ${cd.ty}`} fill="none" stroke={cd.conn.color} strokeWidth="2" strokeDasharray="6 3" opacity="0.7" vectorEffect="non-scaling-stroke" />
@@ -685,7 +685,7 @@ function App() {
                       ))}
                     </svg>
                     {connData.map((cd, idx) => (
-                      <div key={'cl-' + idx} className="absolute pointer-events-none" style={{left: cd.midPct + '%', top: cd.midY - 10, transform: 'translateX(-50%)', zIndex: 40}}>
+                      <div key={'cl-' + idx} className="absolute pointer-events-none" style={{left: cd.midPct + '%', top: cd.midY - 10, transform: 'translateX(-50%)', zIndex: 2}}>
                         <span className="text-xs font-bold whitespace-nowrap px-1.5 py-0.5 rounded" style={{color: cd.conn.color, backgroundColor: darkMode ? 'rgba(3,7,18,0.85)' : 'rgba(255,255,255,0.9)', border: '1px solid ' + cd.conn.color + '40'}}>{cd.conn.label}</span>
                       </div>
                     ))}
