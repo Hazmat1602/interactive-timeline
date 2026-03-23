@@ -281,14 +281,18 @@ function App() {
   const zoomIn = () => { const c = (viewStart + viewEnd) / 2, r = Math.max(20, tw * 0.7); setViewStart(Math.round(c - r / 2)); setViewEnd(Math.round(c + r / 2)) }
   const zoomOut = () => { const c = (viewStart + viewEnd) / 2, r = Math.min(3000, tw * 1.4); setViewStart(Math.round(c - r / 2)); setViewEnd(Math.round(c + r / 2)) }
   const resetView = () => {
-    if (!people.length) { setViewStart(1400); setViewEnd(1970); return }
-    const minY = Math.min(...people.map(p => p.birthYear))
-    const maxY = Math.max(...people.map(p => p.deathYear ?? new Date().getFullYear()))
+    const visible = people.filter(p => (!p.groupIds?.length || p.groupIds.some(gid => visibleGroupIds.has(gid))) && !hiddenPeopleIds.has(p.id))
+    if (!visible.length) { setViewStart(1400); setViewEnd(1970); return }
+    const minY = Math.min(...visible.map(p => p.birthYear))
+    const maxY = Math.max(...visible.map(p => p.deathYear ?? new Date().getFullYear()))
     const range = maxY - minY
     const namePad = Math.max(40, range * 0.15)
     setViewStart(Math.round(minY - namePad))
     setViewEnd(Math.round(maxY + 20))
   }
+  const hideAllPeople = () => setHiddenPeopleIds(new Set(people.map(p => p.id)))
+  const showAllPeople = () => setHiddenPeopleIds(new Set())
+  const allPeopleVisible = hiddenPeopleIds.size === 0
 
   const getTickMarks = useMemo(() => {
     const range = viewEnd - viewStart
@@ -461,6 +465,11 @@ function App() {
           <div className="flex-1 overflow-y-auto p-2">
             {sidebarTab === 'people' && (
               <div className="space-y-0.5 mb-2">
+                <div className="flex items-center gap-1 mb-1">
+                  <button onClick={() => allPeopleVisible ? hideAllPeople() : showAllPeople()} className={`flex items-center gap-1 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors`} title={allPeopleVisible ? 'Hide all people' : 'Show all people'}>
+                    {allPeopleVisible ? <EyeOff size={12} /> : <Eye size={12} />} {allPeopleVisible ? 'Hide All' : 'Show All'}
+                  </button>
+                </div>
                 {people.filter(p => !sidebarSearch || p.name.toLowerCase().includes(sidebarSearch.toLowerCase())).sort((a, b) => sortBy === 'birth' ? a.birthYear - b.birthYear : 0).map(person => (
                   <div key={person.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg ${hov} transition-all`}>
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{backgroundColor: person.color}} />
@@ -477,7 +486,7 @@ function App() {
             )}
             {sidebarTab === 'groups' && (<div>
             <div className="space-y-1 mb-2">
-              {groups.filter(g => !sidebarSearch || g.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map(group => {
+              {groups.filter(g => !sidebarSearch || g.name.toLowerCase().includes(sidebarSearch.toLowerCase()) || people.some(p => p.groupIds?.includes(g.id) && p.name.toLowerCase().includes((sidebarSearch || '').toLowerCase()))).map(group => {
                 const gp = people.filter(p => p.groupIds?.includes(group.id)).filter(p => !sidebarSearch || p.name.toLowerCase().includes(sidebarSearch.toLowerCase()))
                 const collapsed = collapsedGroups.has(group.id)
                 return (
@@ -500,7 +509,34 @@ function App() {
                         <Trash2 size={10} className="text-red-400" />
                       </button>
                     </div>
-                    {!collapsed && group.visible && (
+                    {!collapsed && group.visible && !sidebarSearch && (
+                      <div className="ml-4 space-y-0.5">
+                        {gp.map(person => (
+                          <div key={person.id} draggable={sortBy === 'custom'} onDragStart={() => handleDragStart(person.id)} onDragOver={e => handleDragOver(e, person.id)} onDragEnd={handleDragEnd}
+                            className={`group rounded-lg px-2 py-1.5 cursor-pointer transition-all ${selectedPerson?.id === person.id ? cBg + ' ring-1 ' + (d ? 'ring-gray-700' : 'ring-gray-300') : hov} ${dragPersonId === person.id ? 'opacity-50' : ''}`}
+                            onClick={() => setSelectedPerson(selectedPerson?.id === person.id ? null : person)}>
+                            <div className="flex items-center gap-2">
+                              {sortBy === 'custom' && <GripVertical size={10} className={`${mt} flex-shrink-0 cursor-grab`} />}
+                              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{backgroundColor: person.color}} />
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs font-medium truncate ${hiddenPeopleIds.has(person.id) ? 'line-through opacity-50' : ''}`}>{person.name}</p>
+                                <p className={`text-xs ${mt}`}>{formatYear(person.birthYear)} - {person.deathYear ? formatYear(person.deathYear) : 'Present'}</p>
+                              </div>
+                              <button onClick={e => { e.stopPropagation(); startEditPerson(person) }} className={`opacity-0 group-hover:opacity-100 p-0.5 ${hov} rounded transition-all flex-shrink-0`} title="Edit person">
+                                <Edit2 size={10} className={st} />
+                              </button>
+                              <button onClick={e => { e.stopPropagation(); togglePersonVisibility(person.id) }} className={`p-0.5 ${hov} rounded transition-colors flex-shrink-0`} title={hiddenPeopleIds.has(person.id) ? 'Show' : 'Hide'}>
+                                {hiddenPeopleIds.has(person.id) ? <EyeOff size={10} className={mt} /> : <Eye size={10} className={st} />}
+                              </button>
+                              <button onClick={e => { e.stopPropagation(); removePerson(person.id) }} className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/20 rounded transition-all">
+                                <Trash2 size={10} className="text-red-400" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {!collapsed && group.visible && sidebarSearch && gp.length > 0 && (
                       <div className="ml-4 space-y-0.5">
                         {gp.map(person => (
                           <div key={person.id} draggable={sortBy === 'custom'} onDragStart={() => handleDragStart(person.id)} onDragOver={e => handleDragOver(e, person.id)} onDragEnd={handleDragEnd}
@@ -764,8 +800,8 @@ function App() {
                           return Array.from(byYear.entries()).map(([year, yearEvts]) => {
                             const evPct = ytp(year); if (evPct < -2 || evPct > 102) return null
                             return yearEvts.map((event, idx) => {
-                              const offset = yearEvts.length > 1 ? (idx - (yearEvts.length - 1) / 2) * (compactMode ? 6 : 8) : 0
-                              return <div key={event.id} className="event-dot absolute z-20 cursor-pointer" style={{left: evPct + '%', transform: `translateX(-50%) translateY(${offset}px)`}}
+                              const offset = yearEvts.length > 1 ? (idx - (yearEvts.length - 1) / 2) * (compactMode ? 10 : 14) : 0
+                              return <div key={event.id} className="event-dot absolute z-20 cursor-pointer" style={{left: evPct + '%', transform: `translateX(-50%) translateY(${offset}px)`, padding: '3px'}}
                                 onMouseEnter={e => { const r = e.currentTarget.getBoundingClientRect(); setHoveredEvent({event, person, x: r.left + r.width / 2, y: r.top}) }}
                                 onMouseLeave={() => setHoveredEvent(null)}
                                 onClick={e => { e.stopPropagation(); setSelectedPerson(person); setExpandedPersonId(expandedPersonId === person.id ? null : person.id) }}>
