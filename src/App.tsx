@@ -197,6 +197,7 @@ function App() {
   const [newPerson, setNewPerson] = useState({name: '', birthYear: '', deathYear: '', description: '', groupId: '', notes: ''})
   const [showAddEvent, setShowAddEvent] = useState<string | null>(null)
   const [newEvent, setNewEvent] = useState({year: '', title: '', description: '', category: 'other' as LifeEvent['category'], imageUrl: ''})
+  const [editingEvent, setEditingEvent] = useState<{personId: string, event: LifeEvent} | null>(null)
   const [filterCategory, setFilterCategory] = useState<LifeEvent['category'] | 'all'>('all')
   const [compactMode, setCompactMode] = useState(false)
   const [sidebarSearch, setSidebarSearch] = useState('')
@@ -313,6 +314,7 @@ function App() {
   }
 
   const removeEvent = (pid: string, eid: string) => setPeople(people.map(p => p.id === pid ? { ...p, events: p.events.filter(e => e.id !== eid) } : p))
+  const saveEditEvent = () => { if (!editingEvent) return; setPeople(people.map(p => p.id === editingEvent.personId ? { ...p, events: p.events.map(e => e.id === editingEvent.event.id ? editingEvent.event : e).sort((a, b) => a.year - b.year) } : p)); setEditingEvent(null) }
   const startEditPerson = (p: Person) => setEditingPerson({ ...p })
   const saveEditPerson = () => { if (!editingPerson) return; setPeople(people.map(p => p.id === editingPerson.id ? editingPerson : p)); setEditingPerson(null) }
   const filteredEvents = (events: LifeEvent[]) => filterCategory === 'all' ? events : events.filter(e => e.category === filterCategory)
@@ -747,6 +749,7 @@ function App() {
                                   <p className={'text-xs ' + st}>{event.description}</p>
                                 </div>
                                 <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0" style={{backgroundColor: CC[event.category] + '20', color: CC[event.category]}}>{CL[event.category]}</span>
+                                <button onClick={() => setEditingEvent({personId: person.id, event: {...event}})} className="opacity-0 group-hover/event:opacity-100 p-1 hover:bg-blue-500/20 rounded transition-all flex-shrink-0" title="Edit event"><Edit2 size={12} className={st} /></button>
                                 <button onClick={() => removeEvent(person.id, event.id)} className="opacity-0 group-hover/event:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all flex-shrink-0"><Trash2 size={12} className="text-red-400" /></button>
                               </div>
                             ))}
@@ -873,6 +876,33 @@ function App() {
                 </div>
               </div>
               <button onClick={saveEditPerson} className="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 text-white"><Check size={16} /> Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Event Modal */}
+      {editingEvent && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center" onClick={() => setEditingEvent(null)}>
+          <div className={cBg + ' border ' + bc + ' rounded-2xl p-6 w-full max-w-md shadow-2xl'} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">Edit Event</h2>
+              <button onClick={() => setEditingEvent(null)} className={'p-1 ' + hov + ' rounded-lg transition-colors'}><X size={20} /></button>
+            </div>
+            <div className="space-y-3">
+              <input placeholder="Event title" value={editingEvent.event.title} onChange={e => setEditingEvent({...editingEvent, event: {...editingEvent.event, title: e.target.value}})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} autoFocus />
+              <div className="grid grid-cols-2 gap-3">
+                <input type="number" placeholder="Year" value={editingEvent.event.year} onChange={e => setEditingEvent({...editingEvent, event: {...editingEvent.event, year: parseInt(e.target.value) || 0}})} className={`${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+                <select value={editingEvent.event.category} onChange={e => setEditingEvent({...editingEvent, event: {...editingEvent.event, category: e.target.value as LifeEvent['category']}})} className={`${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}>
+                  {Object.entries(CL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                </select>
+              </div>
+              <textarea placeholder="Description" value={editingEvent.event.description} onChange={e => setEditingEvent({...editingEvent, event: {...editingEvent.event, description: e.target.value}})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-16`} />
+              <div className="flex items-center gap-2">
+                <Image size={14} className={`${mt} flex-shrink-0`} />
+                <input placeholder="Image URL (optional)" value={editingEvent.event.imageUrl || ''} onChange={e => setEditingEvent({...editingEvent, event: {...editingEvent.event, imageUrl: e.target.value || undefined}})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+              </div>
+              <button onClick={saveEditEvent} className="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 text-white"><Check size={16} /> Save Changes</button>
             </div>
           </div>
         </div>
