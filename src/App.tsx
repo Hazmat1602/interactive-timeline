@@ -651,8 +651,8 @@ function App() {
                   return <div key={'g-' + year} className={`absolute top-0 bottom-0 w-px ${gl}`} style={{left: pct + '%', height: (filteredPeople.length * (compactMode ? 40 : 80) + 40) + 'px'}} />
                 })}
 
-                {/* Connection S-curve lines */}
-                {showConnections && (() => {
+                {/* Connection S-curve lines - hidden when a person is expanded since layout shifts */}
+                {showConnections && !expandedPersonId && (() => {
                   const rowStep = compactMode ? 40 : 80
                   const svgH = filteredPeople.length * rowStep + 40
                   const vbW = 1000
