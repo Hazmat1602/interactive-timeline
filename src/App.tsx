@@ -364,7 +364,16 @@ function App() {
   const exportAsPng = async () => {
     const el = exportRef.current; if (!el) return
     setExportingPng(true)
-    await new Promise(r => setTimeout(r, 100))
+    // Auto fit-all before exporting
+    const visible = people.filter(p => (!p.groupIds?.length || p.groupIds.some(gid => visibleGroupIds.has(gid))) && !hiddenPeopleIds.has(p.id))
+    if (visible.length) {
+      const minY = Math.min(...visible.map(p => p.birthYear))
+      const maxY = Math.max(...visible.map(p => p.deathYear ?? new Date().getFullYear()))
+      const range = maxY - minY
+      const namePad = Math.max(40, range * 0.15)
+      setViewStart(Math.round(minY - namePad)); setViewEnd(Math.round(maxY + 20))
+    }
+    await new Promise(r => setTimeout(r, 200))
     try {
       const mod = await import('html2canvas'); const html2canvas = mod.default
       const scrollParent = el.closest('.overflow-y-auto') as HTMLElement | null
@@ -377,16 +386,12 @@ function App() {
       const canvas = await html2canvas(el, {backgroundColor: darkMode ? '#030712' : '#ffffff', scale: 3, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: el.scrollWidth, windowHeight: el.scrollHeight + 100, width: el.scrollWidth, height: el.scrollHeight})
       el.style.paddingBottom = origPadBot
       origStyles.forEach(s => { s.el.style.height = s.height; s.el.style.overflow = s.overflow; s.el.style.maxHeight = s.maxHeight })
-      const pad = 40, titleH = 60
+      const pad = 40
       const finalCanvas = document.createElement('canvas')
-      finalCanvas.width = canvas.width + pad * 2; finalCanvas.height = canvas.height + pad * 2 + titleH
+      finalCanvas.width = canvas.width + pad * 2; finalCanvas.height = canvas.height + pad * 2
       const ctx = finalCanvas.getContext('2d')!
       ctx.fillStyle = darkMode ? '#030712' : '#ffffff'; ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height)
-      ctx.font = 'bold 48px system-ui, -apple-system, sans-serif'; ctx.fillStyle = darkMode ? '#e5e7eb' : '#1f2937'; ctx.textAlign = 'center'
-      ctx.fillText('Interactive Timeline', finalCanvas.width / 2, pad + 40)
-      ctx.font = '24px system-ui, -apple-system, sans-serif'; ctx.fillStyle = darkMode ? '#6b7280' : '#9ca3af'
-      ctx.fillText(formatYear(viewStart) + ' – ' + formatYear(viewEnd) + '  •  ' + filteredPeople.length + ' people', finalCanvas.width / 2, pad + 40 + 30)
-      ctx.drawImage(canvas, pad, pad + titleH)
+      ctx.drawImage(canvas, pad, pad)
       const link = document.createElement('a'); link.download = 'timeline-' + new Date().toISOString().split('T')[0] + '.png'; link.href = finalCanvas.toDataURL('image/png'); link.click()
     }
     catch (err) { console.error(err); alert('PNG export failed. Try Export JSON instead.') }
