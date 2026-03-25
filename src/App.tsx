@@ -365,6 +365,9 @@ function App() {
 
   const tw = useMemo(() => viewEnd - viewStart, [viewStart, viewEnd])
   const ytp = useCallback((year: number) => ((year - viewStart) / tw) * 100, [viewStart, tw])
+  const currentYear = new Date().getFullYear()
+  const currentYearPct = ytp(currentYear)
+  const showCurrentYearLine = currentYearPct >= 0 && currentYearPct <= 100
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.event-dot,.no-drag') || (e.target as HTMLElement).closest('button,input,select,textarea')) return
@@ -818,7 +821,15 @@ function App() {
           </div>
 
           <div ref={timelineRef} className="flex-1 overflow-y-auto px-6 py-3" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} style={{cursor: isDragging ? 'grabbing' : 'grab'}}>
-            <div ref={exportRef}>
+            <div ref={exportRef} className="relative">
+              {showCurrentYearLine && (
+                <div className="absolute top-0 bottom-0 z-20 pointer-events-none" style={{left: currentYearPct + '%', transform: 'translateX(-50%)'}}>
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1.5 whitespace-nowrap px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{backgroundColor: d ? '#1d4ed8' : '#2563eb', color: '#ffffff'}}>
+                    {currentYear}
+                  </div>
+                  <div className="h-full w-[2px] rounded-full" style={{backgroundColor: d ? '#60a5fa' : '#2563eb', boxShadow: d ? '0 0 0 1px rgba(96,165,250,0.18), 0 0 16px rgba(96,165,250,0.25)' : '0 0 0 1px rgba(37,99,235,0.16)'}} />
+                </div>
+              )}
               {/* Eras band */}
               {showEras && eras.length > 0 && (
                 <div className="relative mb-1" style={{height: (eraRows.length * 28) + 'px'}}>
