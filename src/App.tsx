@@ -681,23 +681,6 @@ function App() {
               <button onClick={() => setShowAddConnection(true)} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
                 <Link size={12} /> Add Connection
               </button>
-              {connections.length > 0 && (
-                <div className="space-y-0.5">
-                  {connections.map((conn, idx) => {
-                    const from = people.find(p => p.id === conn.fromId), to = people.find(p => p.id === conn.toId)
-                    if (!from || !to) return null
-                    return (
-                      <div key={idx} className={`group/conn flex items-center gap-1 px-1 py-0.5 rounded text-xs ${hov}`}>
-                        <div className="w-2 h-0.5 rounded" style={{backgroundColor: conn.color}} />
-                        <span className="truncate flex-1" style={{color: conn.color}}>{from.name} &rarr; {to.name}</span>
-                        <button onClick={() => removeConnection(idx)} className="opacity-0 group-hover/conn:opacity-100 p-0.5 hover:bg-red-500/20 rounded transition-all">
-                          <X size={8} className="text-red-400" />
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
             </div>
             <div className={`mt-3 pt-3 border-t ${bc} space-y-1`}>
               <button onClick={exportData} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
