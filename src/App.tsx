@@ -196,6 +196,8 @@ interface ProxyConfig {
   no_proxy?: string
 }
 
+const TIMELINE_IMAGE_CACHE = 'timeline-image-cache-v1'
+
 const isTauri = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
 async function invokeTauri<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
@@ -281,9 +283,65 @@ function App() {
   const [exportingPng, setExportingPng] = useState(false)
   const [proxyConfig, setProxyConfig] = useState<ProxyConfig | null>(null)
   const [hiddenPeopleIds, setHiddenPeopleIds] = useState<Set<string>>(new Set())
+  const [cachedImageSrcs, setCachedImageSrcs] = useState<Record<string, string>>({})
   const timelineRef = useRef<HTMLDivElement>(null)
   const exportRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const imageObjectUrlsRef = useRef(new Map<string, string>())
+  const imageCachePromisesRef = useRef(new Map<string, Promise<string>>())
+
+  const cacheImageLocally = useCallback(async (url: string): Promise<string> => {
+    if (!url || typeof window === 'undefined') return url
+
+    const existingSrc = imageObjectUrlsRef.current.get(url)
+    if (existingSrc) return existingSrc
+
+    const pending = imageCachePromisesRef.current.get(url)
+    if (pending) return pending
+
+    const task = (async () => {
+      if (!('caches' in window)) return url
+      try {
+        const cache = await caches.open(TIMELINE_IMAGE_CACHE)
+        let response = await cache.match(url)
+        if (!response) {
+          const fetched = await fetch(url)
+          if (!fetched.ok) return url
+          await cache.put(url, fetched.clone())
+          response = fetched
+        }
+
+        const blob = await response.blob()
+        const objectUrl = URL.createObjectURL(blob)
+        imageObjectUrlsRef.current.set(url, objectUrl)
+        setCachedImageSrcs(prev => (prev[url] ? prev : {...prev, [url]: objectUrl}))
+        return objectUrl
+      } catch {
+        return url
+      }
+    })()
+
+    imageCachePromisesRef.current.set(url, task)
+    const resolved = await task
+    imageCachePromisesRef.current.delete(url)
+    return resolved
+  }, [])
+
+  const resolveImageSrc = useCallback((url?: string) => {
+    if (!url) return undefined
+    return cachedImageSrcs[url] ?? url
+  }, [cachedImageSrcs])
+
+  useEffect(() => {
+    const uniqueUrls = Array.from(new Set(people.flatMap(person => person.events.map(event => event.imageUrl).filter(Boolean) as string[])))
+    uniqueUrls.forEach(url => { void cacheImageLocally(url) })
+  }, [people, cacheImageLocally])
+
+  useEffect(() => () => {
+    imageObjectUrlsRef.current.forEach(objectUrl => URL.revokeObjectURL(objectUrl))
+    imageObjectUrlsRef.current.clear()
+    imageCachePromisesRef.current.clear()
+  }, [])
 
   const visibleGroupIds = useMemo(() => {
     const s = new Set<string>()
@@ -1081,7 +1139,7 @@ function App() {
                                 </div>
                                 {event.imageUrl && (
                                   <div className="relative flex-shrink-0">
-                                    <img src={event.imageUrl} alt={event.title} className={'w-12 h-12 object-cover rounded-lg border cursor-pointer ' + bc}
+                                    <img src={resolveImageSrc(event.imageUrl)} alt={event.title} className={'w-12 h-12 object-cover rounded-lg border cursor-pointer ' + bc}
                                       onMouseEnter={e => { const r = e.currentTarget.getBoundingClientRect(); setHoveredEvent({event, person, x: r.right + 8, y: r.top}) }}
                                       onMouseLeave={() => setHoveredEvent(null)}
                                       onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
@@ -1179,7 +1237,7 @@ function App() {
         if (top - ph < pad) { top = hoveredEvent.y + 20; ty = '0%' }
         return <div className="fixed z-50 pointer-events-none" style={{left: left + 'px', top: top + 'px', transform: `translate(${tx}, ${ty})`}}>
           <div className={pBg + ' border ' + pBo + ' rounded-xl shadow-2xl overflow-hidden'} style={{width: pw + 'px', maxHeight: (window.innerHeight - pad * 2) + 'px'}}>
-            {hoveredEvent.event.imageUrl && <div className={'w-full overflow-hidden flex items-center justify-center ' + iBg} style={{maxHeight: '200px'}}><img src={hoveredEvent.event.imageUrl} alt={hoveredEvent.event.title} className="max-w-full max-h-full object-contain" style={{maxHeight: '200px'}} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} /></div>}
+            {hoveredEvent.event.imageUrl && <div className={'w-full overflow-hidden flex items-center justify-center ' + iBg} style={{maxHeight: '200px'}}><img src={resolveImageSrc(hoveredEvent.event.imageUrl)} alt={hoveredEvent.event.title} className="max-w-full max-h-full object-contain" style={{maxHeight: '200px'}} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} /></div>}
             <div className="px-4 py-3">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 rounded-full" style={{backgroundColor: CC[hoveredEvent.event.category]}} />
