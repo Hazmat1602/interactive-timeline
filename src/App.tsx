@@ -201,7 +201,7 @@ function App() {
   const [filterCategory, setFilterCategory] = useState<LifeEvent['category'] | 'all'>('all')
   const [compactMode, setCompactMode] = useState(false)
   const [sidebarSearch, setSidebarSearch] = useState('')
-  const [sortBy, setSortBy] = useState<'custom' | 'birth'>('birth')
+  const [sortBy, setSortBy] = useState<'custom' | 'birth' | 'connections'>('birth')
   const [sidebarTab, setSidebarTab] = useState<'groups' | 'people'>('groups')
   const [inlineNewGroupName, setInlineNewGroupName] = useState('')
   const [showInlineNewGroup, setShowInlineNewGroup] = useState<'add' | 'edit' | null>(null)
@@ -234,13 +234,85 @@ function App() {
     return s
   }, [groups])
 
+  const connectionSortOrder = useMemo(() => {
+    const personById = new Map(people.map(person => [person.id, person]))
+    const undirectedAdjacency = new Map<string, Set<string>>()
+
+    people.forEach(person => {
+      undirectedAdjacency.set(person.id, new Set())
+    })
+
+    connections.forEach(({ fromId, toId }) => {
+      if (!undirectedAdjacency.has(fromId)) undirectedAdjacency.set(fromId, new Set())
+      if (!undirectedAdjacency.has(toId)) undirectedAdjacency.set(toId, new Set())
+
+      undirectedAdjacency.get(fromId)?.add(toId)
+      undirectedAdjacency.get(toId)?.add(fromId)
+    })
+
+    const visited = new Set<string>()
+    const components: string[][] = []
+
+    for (const person of people) {
+      if (visited.has(person.id)) continue
+      const queue = [person.id]
+      const component: string[] = []
+      visited.add(person.id)
+
+      while (queue.length) {
+        const currentId = queue.shift()
+        if (!currentId) continue
+        component.push(currentId)
+        undirectedAdjacency.get(currentId)?.forEach(neighbor => {
+          if (!visited.has(neighbor)) {
+            visited.add(neighbor)
+            queue.push(neighbor)
+          }
+        })
+      }
+
+      components.push(component)
+    }
+
+    components.sort((a, b) => {
+      const aRootBirth = Math.min(...a.map(id => personById.get(id)?.birthYear ?? Infinity))
+      const bRootBirth = Math.min(...b.map(id => personById.get(id)?.birthYear ?? Infinity))
+      if (aRootBirth !== bRootBirth) return aRootBirth - bRootBirth
+      return b.length - a.length
+    })
+
+    const orderedIds: string[] = []
+    const byBirthYear = (a: string, b: string) => (personById.get(a)?.birthYear ?? 0) - (personById.get(b)?.birthYear ?? 0)
+
+    for (const component of components) {
+      component.sort(byBirthYear).forEach(id => orderedIds.push(id))
+    }
+
+    return orderedIds.reduce((map, id, index) => {
+      map.set(id, index)
+      return map
+    }, new Map<string, number>())
+  }, [people, connections])
+
   const filteredPeople = useMemo(() => {
     let r = people.filter(p => (!p.groupIds?.length || p.groupIds.some(gid => visibleGroupIds.has(gid))) && !hiddenPeopleIds.has(p.id))
     if (sidebarSearch) { const q = sidebarSearch.toLowerCase(); r = r.filter(p => p.name.toLowerCase().includes(q)) }
     if (sortBy === 'birth') r = [...r].sort((a, b) => a.birthYear - b.birthYear)
+    else if (sortBy === 'connections') r = [...r].sort((a, b) => (connectionSortOrder.get(a.id) ?? 9999) - (connectionSortOrder.get(b.id) ?? 9999))
     else { const m = new Map(personOrder.map((id, i) => [id, i])); r = [...r].sort((a, b) => (m.get(a.id) ?? 999) - (m.get(b.id) ?? 999)) }
     return r
-  }, [people, sidebarSearch, sortBy, visibleGroupIds, personOrder, hiddenPeopleIds])
+  }, [people, sidebarSearch, sortBy, visibleGroupIds, personOrder, hiddenPeopleIds, connectionSortOrder])
+
+  const sortRankMap = useMemo(() => {
+    if (sortBy === 'birth') return new Map(people.map(p => [p.id, p.birthYear]))
+    if (sortBy === 'connections') return connectionSortOrder
+    return new Map(personOrder.map((id, i) => [id, i]))
+  }, [sortBy, people, connectionSortOrder, personOrder])
+
+  const sortPeopleForDisplay = useCallback((list: Person[]) => {
+    if (sortBy === 'birth') return [...list].sort((a, b) => a.birthYear - b.birthYear)
+    return [...list].sort((a, b) => (sortRankMap.get(a.id) ?? 9999) - (sortRankMap.get(b.id) ?? 9999))
+  }, [sortBy, sortRankMap])
 
   const togglePersonVisibility = (pid: string) => {
     setHiddenPeopleIds(prev => { const n = new Set(prev); n.has(pid) ? n.delete(pid) : n.add(pid); return n })
@@ -478,12 +550,18 @@ function App() {
             <div className="mt-2">
               <div className="flex items-center justify-between mb-1">
                 <span className={`text-xs ${mt}`}>{filteredPeople.length} people</span>
-                <div className="flex items-center gap-1">
+                <label className="flex items-center gap-1">
                   <span className={`text-xs ${mt}`}>Sort:</span>
-                  {(['custom', 'birth'] as const).map(s => (
-                    <button key={s} onClick={() => setSortBy(s)} className={`px-1.5 py-0.5 text-xs rounded text-center capitalize ${sortBy === s ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt}`}>{s}</button>
-                  ))}
-                </div>
+                  <select
+                    value={sortBy}
+                    onChange={e => setSortBy(e.target.value as 'custom' | 'birth' | 'connections')}
+                    className={`${iBg} border ${iBo} rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                  >
+                    <option value="birth">Birth Year</option>
+                    <option value="connections">Connections</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </label>
               </div>
               <div className="flex gap-1 mt-1">
                 <button onClick={() => setSidebarTab('groups')} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs rounded transition-colors ${sidebarTab === 'groups' ? (d ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900') : mt + ' ' + hov}`}><Users size={12} /> Groups</button>
@@ -499,7 +577,7 @@ function App() {
                     {allPeopleVisible ? <EyeOff size={12} /> : <Eye size={12} />} {allPeopleVisible ? 'Hide All' : 'Show All'}
                   </button>
                 </div>
-                {people.filter(p => !sidebarSearch || p.name.toLowerCase().includes(sidebarSearch.toLowerCase())).sort((a, b) => sortBy === 'birth' ? a.birthYear - b.birthYear : 0).map(person => (
+                {sortPeopleForDisplay(people.filter(p => !sidebarSearch || p.name.toLowerCase().includes(sidebarSearch.toLowerCase()))).map(person => (
                   <div key={person.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg ${hov} transition-all`}>
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{backgroundColor: person.color}} />
                     <div className="flex-1 min-w-0">
@@ -516,7 +594,7 @@ function App() {
             {sidebarTab === 'groups' && (<div>
             <div className="space-y-1 mb-2">
               {groups.filter(g => !sidebarSearch || g.name.toLowerCase().includes(sidebarSearch.toLowerCase()) || people.some(p => p.groupIds?.includes(g.id) && p.name.toLowerCase().includes((sidebarSearch || '').toLowerCase()))).map(group => {
-                const gp = people.filter(p => p.groupIds?.includes(group.id)).filter(p => !sidebarSearch || p.name.toLowerCase().includes(sidebarSearch.toLowerCase()))
+                const gp = sortPeopleForDisplay(people.filter(p => p.groupIds?.includes(group.id)).filter(p => !sidebarSearch || p.name.toLowerCase().includes(sidebarSearch.toLowerCase())))
                 const collapsed = collapsedGroups.has(group.id)
                 return (
                   <div key={group.id}>
@@ -600,7 +678,7 @@ function App() {
               <div className="mb-2">
                 <div className={`px-1 py-1 text-xs ${mt} font-medium`}>Ungrouped</div>
                 <div className="space-y-0.5">
-                  {people.filter(p => !p.groupIds?.length).map(person => (
+                  {sortPeopleForDisplay(people.filter(p => !p.groupIds?.length)).map(person => (
                     <div key={person.id} draggable={sortBy === 'custom'} onDragStart={() => handleDragStart(person.id)} onDragOver={e => handleDragOver(e, person.id)} onDragEnd={handleDragEnd}
                       className={`group rounded-lg px-2.5 py-1.5 cursor-pointer transition-all ${selectedPerson?.id === person.id ? cBg + ' ring-1 ' + (d ? 'ring-gray-700' : 'ring-gray-300') : hov} ${dragPersonId === person.id ? 'opacity-50' : ''}`}
                       onClick={() => setSelectedPerson(selectedPerson?.id === person.id ? null : person)}>
