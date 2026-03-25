@@ -235,19 +235,13 @@ function App() {
   }, [groups])
 
   const connectionSortOrder = useMemo(() => {
-    const personById = new Map(people.map(person => [person.id, person]))
-    const undirectedAdjacency = new Map<string, Set<string>>()
-
-    people.forEach(person => {
-      undirectedAdjacency.set(person.id, new Set())
-    })
-
+    const adjacency = new Map<string, Set<string>>()
+    people.forEach(person => adjacency.set(person.id, new Set()))
     connections.forEach(({ fromId, toId }) => {
-      if (!undirectedAdjacency.has(fromId)) undirectedAdjacency.set(fromId, new Set())
-      if (!undirectedAdjacency.has(toId)) undirectedAdjacency.set(toId, new Set())
-
-      undirectedAdjacency.get(fromId)?.add(toId)
-      undirectedAdjacency.get(toId)?.add(fromId)
+      if (!adjacency.has(fromId)) adjacency.set(fromId, new Set())
+      if (!adjacency.has(toId)) adjacency.set(toId, new Set())
+      adjacency.get(fromId)?.add(toId)
+      adjacency.get(toId)?.add(fromId)
     })
 
     const visited = new Set<string>()
@@ -263,7 +257,7 @@ function App() {
         const currentId = queue.shift()
         if (!currentId) continue
         component.push(currentId)
-        undirectedAdjacency.get(currentId)?.forEach(neighbor => {
+        adjacency.get(currentId)?.forEach(neighbor => {
           if (!visited.has(neighbor)) {
             visited.add(neighbor)
             queue.push(neighbor)
@@ -275,17 +269,53 @@ function App() {
     }
 
     components.sort((a, b) => {
-      const aRootBirth = Math.min(...a.map(id => personById.get(id)?.birthYear ?? Infinity))
-      const bRootBirth = Math.min(...b.map(id => personById.get(id)?.birthYear ?? Infinity))
-      if (aRootBirth !== bRootBirth) return aRootBirth - bRootBirth
-      return b.length - a.length
+      if (b.length !== a.length) return b.length - a.length
+      const aMinBirth = Math.min(...a.map(id => people.find(p => p.id === id)?.birthYear ?? Infinity))
+      const bMinBirth = Math.min(...b.map(id => people.find(p => p.id === id)?.birthYear ?? Infinity))
+      return aMinBirth - bMinBirth
     })
 
     const orderedIds: string[] = []
-    const byBirthYear = (a: string, b: string) => (personById.get(a)?.birthYear ?? 0) - (personById.get(b)?.birthYear ?? 0)
-
     for (const component of components) {
-      component.sort(byBirthYear).forEach(id => orderedIds.push(id))
+      const componentSet = new Set(component)
+      const degree = (id: string) => adjacency.get(id)?.size ?? 0
+      const start = [...component].sort((a, b) => {
+        if (degree(b) !== degree(a)) return degree(b) - degree(a)
+        const pa = people.find(p => p.id === a)
+        const pb = people.find(p => p.id === b)
+        return (pa?.birthYear ?? 0) - (pb?.birthYear ?? 0)
+      })[0]
+
+      const queue = start ? [start] : []
+      const seenInComponent = new Set<string>(queue)
+
+      while (queue.length) {
+        const currentId = queue.shift()
+        if (!currentId) continue
+        orderedIds.push(currentId)
+        const neighbors = [...(adjacency.get(currentId) ?? [])]
+          .filter(id => componentSet.has(id) && !seenInComponent.has(id))
+          .sort((a, b) => {
+            if (degree(b) !== degree(a)) return degree(b) - degree(a)
+            const pa = people.find(p => p.id === a)
+            const pb = people.find(p => p.id === b)
+            return (pa?.birthYear ?? 0) - (pb?.birthYear ?? 0)
+          })
+        neighbors.forEach(id => {
+          seenInComponent.add(id)
+          queue.push(id)
+        })
+      }
+
+      component
+        .filter(id => !seenInComponent.has(id))
+        .sort((a, b) => {
+          if (degree(b) !== degree(a)) return degree(b) - degree(a)
+          const pa = people.find(p => p.id === a)
+          const pb = people.find(p => p.id === b)
+          return (pa?.birthYear ?? 0) - (pb?.birthYear ?? 0)
+        })
+        .forEach(id => orderedIds.push(id))
     }
 
     return orderedIds.reduce((map, id, index) => {
