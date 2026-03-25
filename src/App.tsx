@@ -213,6 +213,7 @@ function App() {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const [darkMode, setDarkMode] = useState(true)
   const [showConnections, setShowConnections] = useState(true)
+  const [hoveredConnectionIdx, setHoveredConnectionIdx] = useState<number | null>(null)
   const [showAddConnection, setShowAddConnection] = useState(false)
   const [newConnection, setNewConnection] = useState({fromId: '', toId: '', label: ''})
   const [dragPersonId, setDragPersonId] = useState<string | null>(null)
@@ -775,18 +776,20 @@ function App() {
                     const fromEndX = (fromEndPct / 100) * vbW
                     const toStartX = (toStartPct / 100) * vbW
                     const rowsBetween = Math.abs(fi - ti)
-                    const curveOffset = Math.min(200, 50 + rowsBetween * 40)
-                    const cp1x = fromEndX + curveOffset, cp1y = fy
-                    const cp2x = toStartX + curveOffset, cp2y = ty
+                    const horizontalGap = Math.max(80, Math.abs(toStartX - fromEndX))
+                    const curveOffset = Math.min(260, 40 + rowsBetween * 24 + horizontalGap * 0.5)
+                    const cp1x = fromEndX + curveOffset * 0.35, cp1y = fy
+                    const cp2x = toStartX - curveOffset * 0.35, cp2y = ty
                     const midX = 0.125 * fromEndX + 0.375 * cp1x + 0.375 * cp2x + 0.125 * toStartX
                     const midY = 0.125 * fy + 0.375 * cp1y + 0.375 * cp2y + 0.125 * ty
                     const midPct = (midX / vbW) * 100
                     return { conn, fromEndX, toStartX, fy, ty, cp1x, cp1y, cp2x, cp2y, midPct, midY }
                   }).filter(Boolean) as { conn: typeof connections[0], fromEndX: number, toStartX: number, fy: number, ty: number, cp1x: number, cp1y: number, cp2x: number, cp2y: number, midPct: number, midY: number }[]
                   return <>
-                    <svg className="absolute top-0 left-0 w-full pointer-events-none" style={{height: svgH + 'px', zIndex: 1, overflow: 'visible'}} viewBox={`0 0 ${vbW} ${svgH}`} preserveAspectRatio="none">
+                    <svg className="absolute top-0 left-0 w-full" style={{height: svgH + 'px', zIndex: 1, overflow: 'visible'}} viewBox={`0 0 ${vbW} ${svgH}`} preserveAspectRatio="none">
                       {connData.map((cd, idx) => (
-                        <g key={'c-' + idx}>
+                        <g key={'c-' + idx} onMouseEnter={() => setHoveredConnectionIdx(idx)} onMouseLeave={() => setHoveredConnectionIdx((prev) => prev === idx ? null : prev)}>
+                          <path d={`M ${cd.fromEndX} ${cd.fy} C ${cd.cp1x} ${cd.cp1y}, ${cd.cp2x} ${cd.cp2y}, ${cd.toStartX} ${cd.ty}`} fill="none" stroke="transparent" strokeWidth="12" />
                           <path d={`M ${cd.fromEndX} ${cd.fy} C ${cd.cp1x} ${cd.cp1y}, ${cd.cp2x} ${cd.cp2y}, ${cd.toStartX} ${cd.ty}`} fill="none" stroke={cd.conn.color} strokeWidth="2" strokeDasharray="6 3" opacity="0.7" vectorEffect="non-scaling-stroke" />
                           <circle cx={cd.fromEndX} cy={cd.fy} r="5" fill={cd.conn.color} opacity="0.9" vectorEffect="non-scaling-stroke" />
                           <circle cx={cd.toStartX} cy={cd.ty} r="5" fill={cd.conn.color} opacity="0.9" vectorEffect="non-scaling-stroke" />
@@ -794,7 +797,7 @@ function App() {
                       ))}
                     </svg>
                     {connData.map((cd, idx) => (
-                      <div key={'cl-' + idx} className="absolute pointer-events-none" style={{left: cd.midPct + '%', top: cd.midY - 10, transform: 'translateX(-50%)', zIndex: 2}}>
+                      <div key={'cl-' + idx} className={`absolute pointer-events-none transition-opacity ${hoveredConnectionIdx === idx ? 'opacity-100' : 'opacity-0'}`} style={{left: cd.midPct + '%', top: cd.midY - 10, transform: 'translateX(-50%)', zIndex: 2}}>
                         <span className="text-xs font-bold whitespace-nowrap px-1.5 py-0.5 rounded" style={{color: cd.conn.color, backgroundColor: darkMode ? 'rgba(3,7,18,0.85)' : 'rgba(255,255,255,0.9)', border: '1px solid ' + cd.conn.color + '40'}}>{cd.conn.label}</span>
                       </div>
                     ))}
