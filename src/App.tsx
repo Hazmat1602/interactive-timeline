@@ -681,23 +681,6 @@ function App() {
               <button onClick={() => setShowAddConnection(true)} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
                 <Link size={12} /> Add Connection
               </button>
-              {connections.length > 0 && (
-                <div className="space-y-0.5">
-                  {connections.map((conn, idx) => {
-                    const from = people.find(p => p.id === conn.fromId), to = people.find(p => p.id === conn.toId)
-                    if (!from || !to) return null
-                    return (
-                      <div key={idx} className={`group/conn flex items-center gap-1 px-1 py-0.5 rounded text-xs ${hov}`}>
-                        <div className="w-2 h-0.5 rounded" style={{backgroundColor: conn.color}} />
-                        <span className="truncate flex-1" style={{color: conn.color}}>{from.name} &rarr; {to.name}</span>
-                        <button onClick={() => removeConnection(idx)} className="opacity-0 group-hover/conn:opacity-100 p-0.5 hover:bg-red-500/20 rounded transition-all">
-                          <X size={8} className="text-red-400" />
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
             </div>
             <div className={`mt-3 pt-3 border-t ${bc} space-y-1`}>
               <button onClick={exportData} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
@@ -809,6 +792,16 @@ function App() {
                   const sp = ytp(person.birthYear), ep = ytp(person.deathYear ?? new Date().getFullYear())
                   const bl = Math.max(0, sp), br = Math.min(100, ep)
                   const isSel = selectedPerson?.id === person.id, isExp = expandedPersonId === person.id
+                  const personConnections = connections
+                    .map((conn, idx) => {
+                      if (conn.fromId !== person.id && conn.toId !== person.id) return null
+                      const isOutgoing = conn.fromId === person.id
+                      const otherPersonId = isOutgoing ? conn.toId : conn.fromId
+                      const otherPerson = people.find(p => p.id === otherPersonId)
+                      if (!otherPerson) return null
+                      return { conn, idx, isOutgoing, otherPerson }
+                    })
+                    .filter(Boolean) as { conn: Connection; idx: number; isOutgoing: boolean; otherPerson: Person }[]
                   return (
                     <div key={person.id} className="relative" style={{marginBottom: compactMode ? '4px' : '8px', height: isExp ? 'auto' : rowH + 'px'}}>
                       {/* Life bar with name label inline */}
@@ -885,6 +878,34 @@ function App() {
                               </div>
                             ))}
                           </div>
+                          {personConnections.length > 0 && (
+                            <div className={'mt-3 p-2 ' + iBg + ' rounded-lg border ' + bc}>
+                              <div className={'text-xs font-medium mb-2 ' + mt}>Connections</div>
+                              <div className="space-y-1.5">
+                                {personConnections.map(({ conn, idx, isOutgoing, otherPerson }) => (
+                                  <div
+                                    key={`${person.id}-conn-${idx}`}
+                                    className="flex items-center justify-between gap-2 text-xs group/expanded-conn"
+                                    onMouseEnter={() => setHoveredConnectionIdx(idx)}
+                                    onMouseLeave={() => setHoveredConnectionIdx((prev) => prev === idx ? null : prev)}
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0 px-1.5 py-1">
+                                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{backgroundColor: conn.color}} />
+                                      <span className="truncate">{isOutgoing ? 'To' : 'From'} {otherPerson.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                      <span className="px-2 py-0.5 rounded-full" style={{backgroundColor: conn.color + '20', color: conn.color}}>
+                                        {conn.label}
+                                      </span>
+                                      <button onClick={() => removeConnection(idx)} className="opacity-0 group-hover/expanded-conn:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all">
+                                        <X size={10} className="text-red-400" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           {showAddEvent === person.id && (
                             <div className={'mt-3 pt-3 border-t ' + bc}>
                               <div className="grid grid-cols-4 gap-2">
