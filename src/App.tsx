@@ -181,6 +181,62 @@ const initialPeople: Person[] = [
 
 function genId(): string { return Math.random().toString(36).substring(2, 9) }
 
+interface TimelineSnapshot {
+  people: Person[]
+  groups: Group[]
+  connections: Connection[]
+  personOrder: string[]
+  eras: Era[]
+}
+
+interface ProxyConfig {
+  http_proxy?: string
+  https_proxy?: string
+  all_proxy?: string
+  no_proxy?: string
+}
+
+const isTauri = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+
+async function invokeTauri<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  const tauri = (window as Window & { __TAURI_INTERNALS__?: { invoke: <R>(command: string, payload?: unknown) => Promise<R> } }).__TAURI_INTERNALS__
+  if (!tauri) throw new Error('Tauri runtime not available')
+  return tauri.invoke<T>(cmd, args)
+}
+
+async function getDesktopProxyConfiguration(): Promise<ProxyConfig | null> {
+  if (!isTauri()) return null
+  return invokeTauri<ProxyConfig>('get_proxy_configuration')
+}
+
+async function saveJsonInDesktopApp(payload: TimelineSnapshot) {
+  const picker = window as Window & { showSaveFilePicker?: (opts: unknown) => Promise<{ createWritable: () => Promise<{ write: (data: string) => Promise<void>; close: () => Promise<void> }> }> }
+  if (!picker.showSaveFilePicker) return false
+
+  const handle = await picker.showSaveFilePicker({
+    suggestedName: `timeline-${new Date().toISOString().split('T')[0]}.json`,
+    types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+  })
+  const writable = await handle.createWritable()
+  await writable.write(JSON.stringify(payload, null, 2))
+  await writable.close()
+  return true
+}
+
+async function loadJsonInDesktopApp(): Promise<TimelineSnapshot | null> {
+  const picker = window as Window & { showOpenFilePicker?: (opts: unknown) => Promise<Array<{ getFile: () => Promise<File> }>> }
+  if (!picker.showOpenFilePicker) return null
+
+  const handles = await picker.showOpenFilePicker({
+    multiple: false,
+    types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+  })
+  if (!handles.length) return null
+  const file = await handles[0].getFile()
+  const text = await file.text()
+  return JSON.parse(text) as TimelineSnapshot
+}
+
 function App() {
   const [people, setPeople] = useState<Person[]>(initialPeople)
   const [connections, setConnections] = useState<Connection[]>(initialConnections)
@@ -223,6 +279,7 @@ function App() {
   const [newEra, setNewEra] = useState({name: '', startYear: '', endYear: ''})
   const [showEras, setShowEras] = useState(true)
   const [exportingPng, setExportingPng] = useState(false)
+  const [proxyConfig, setProxyConfig] = useState<ProxyConfig | null>(null)
   const [hiddenPeopleIds, setHiddenPeopleIds] = useState<Set<string>>(new Set())
   const timelineRef = useRef<HTMLDivElement>(null)
   const exportRef = useRef<HTMLDivElement>(null)
@@ -456,14 +513,46 @@ function App() {
   }
   const removeEra = (id: string) => setEras(eras.filter(e => e.id !== id))
 
-  const exportData = () => {
-    const blob = new Blob([JSON.stringify({people, groups, connections, personOrder, eras}, null, 2)], {type: 'application/json'})
+  const applyImportedData = (d: Partial<TimelineSnapshot>) => {
+    if (d.people) setPeople(d.people)
+    if (d.groups) setGroups(d.groups)
+    if (d.connections) setConnections(d.connections)
+    if (d.personOrder) setPersonOrder(d.personOrder)
+    if (d.eras) setEras(d.eras)
+  }
+
+  const exportData = async () => {
+    const payload: TimelineSnapshot = {people, groups, connections, personOrder, eras}
+
+    if (isTauri()) {
+      try {
+        const saved = await saveJsonInDesktopApp(payload)
+        if (saved) return
+      } catch (err) {
+        console.error(err)
+        alert('Desktop export failed. Falling back to browser download.')
+      }
+    }
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'})
     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'timeline-' + new Date().toISOString().split('T')[0] + '.json'; a.click(); URL.revokeObjectURL(url)
   }
-  const importData = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return
+  const importData = async (e?: React.ChangeEvent<HTMLInputElement>) => {
+    if (isTauri()) {
+      try {
+        const d = await loadJsonInDesktopApp()
+        if (!d) return
+        applyImportedData(d)
+      } catch (err) {
+        console.error(err)
+        alert('Invalid JSON file')
+      }
+      return
+    }
+
+    const file = e?.target.files?.[0]; if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => { try { const d = JSON.parse(ev.target?.result as string); if (d.people) setPeople(d.people); if (d.groups) setGroups(d.groups); if (d.connections) setConnections(d.connections); if (d.personOrder) setPersonOrder(d.personOrder); if (d.eras) setEras(d.eras) } catch { alert('Invalid JSON file') } }
+    reader.onload = (ev) => { try { const d = JSON.parse(ev.target?.result as string); applyImportedData(d) } catch { alert('Invalid JSON file') } }
     reader.readAsText(file); e.target.value = ''
   }
 
@@ -519,6 +608,14 @@ function App() {
   }
   const handleDragEnd = () => setDragPersonId(null)
 
+
+  useEffect(() => {
+    if (!isTauri()) return
+    getDesktopProxyConfiguration().then(setProxyConfig).catch(err => {
+      console.error('Failed to read proxy configuration', err)
+    })
+  }, [])
+
   const d = darkMode
   const bg = d ? 'bg-gray-950' : 'bg-gray-50'
   const text = d ? 'text-white' : 'text-gray-900'
@@ -550,6 +647,9 @@ function App() {
           <div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Interactive Timeline</h1>
             <p className={`text-xs ${st} mt-0.5`}>Explore the lives and achievements of remarkable people</p>
+            {proxyConfig && (proxyConfig.http_proxy || proxyConfig.https_proxy || proxyConfig.all_proxy) && (
+              <p className={`text-[11px] ${st} mt-1`}>Desktop proxy detected (HTTP/HTTPS)</p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <select value={filterCategory} onChange={e => setFilterCategory(e.target.value as LifeEvent['category'] | 'all')} className={`${iBg} border ${iBo} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}>
@@ -797,7 +897,7 @@ function App() {
               <button onClick={exportData} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
                 <Download size={12} /> Export JSON
               </button>
-              <button onClick={() => fileInputRef.current?.click()} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
+              <button onClick={() => isTauri() ? importData() : fileInputRef.current?.click()} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full`}>
                 <Upload size={12} /> Import JSON
               </button>
               <input ref={fileInputRef} type="file" accept=".json" onChange={importData} className="hidden" />
