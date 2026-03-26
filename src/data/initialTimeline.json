@@ -1,0 +1,801 @@
+{
+  "people": [
+    {
+      "id": "1",
+      "name": "Albert Einstein",
+      "birthYear": 1879,
+      "deathYear": 1955,
+      "color": "#3b82f6",
+      "description": "Theoretical physicist who developed the theory of relativity",
+      "groupIds": [
+        "g1"
+      ],
+      "notes": "His mass-energy equivalence formula E=mc2 is one of the most famous equations in physics.",
+      "events": [
+        {
+          "id": "e1",
+          "year": 1879,
+          "title": "Born in Ulm",
+          "description": "Born in Ulm, Kingdom of Wurttemberg, German Empire",
+          "category": "birth"
+        },
+        {
+          "id": "e2",
+          "year": 1896,
+          "title": "Entered ETH Zurich",
+          "description": "Enrolled at the Swiss Federal Polytechnic School in Zurich",
+          "category": "education"
+        },
+        {
+          "id": "e3",
+          "year": 1905,
+          "title": "Annus Mirabilis Papers",
+          "description": "Published four groundbreaking papers including special relativity and E=mc2",
+          "category": "achievement"
+        },
+        {
+          "id": "e4",
+          "year": 1915,
+          "title": "General Relativity",
+          "description": "Completed the general theory of relativity",
+          "category": "achievement"
+        },
+        {
+          "id": "e5",
+          "year": 1921,
+          "title": "Nobel Prize in Physics",
+          "description": "Awarded Nobel Prize for the photoelectric effect",
+          "category": "achievement",
+          "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Albert_Einstein_%28Nobel%29.png/440px-Albert_Einstein_%28Nobel%29.png"
+        },
+        {
+          "id": "e6",
+          "year": 1933,
+          "title": "Emigrated to USA",
+          "description": "Fled Nazi Germany and settled in Princeton, New Jersey",
+          "category": "personal"
+        },
+        {
+          "id": "e7",
+          "year": 1940,
+          "title": "US Citizenship",
+          "description": "Became a United States citizen",
+          "category": "personal"
+        },
+        {
+          "id": "e8",
+          "year": 1955,
+          "title": "Died in Princeton",
+          "description": "Died at Princeton Hospital, New Jersey",
+          "category": "death"
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "name": "Marie Curie",
+      "birthYear": 1867,
+      "deathYear": 1934,
+      "color": "#ef4444",
+      "description": "Physicist and chemist, pioneer in radioactivity research",
+      "groupIds": [
+        "g1"
+      ],
+      "notes": "First woman to win a Nobel Prize and the only person to win in two different sciences.",
+      "events": [
+        {
+          "id": "e9",
+          "year": 1867,
+          "title": "Born in Warsaw",
+          "description": "Born Maria Sklodowska in Warsaw, Russian Empire",
+          "category": "birth"
+        },
+        {
+          "id": "e10",
+          "year": 1891,
+          "title": "Moved to Paris",
+          "description": "Enrolled at the University of Paris to study physics",
+          "category": "education"
+        },
+        {
+          "id": "e11",
+          "year": 1895,
+          "title": "Married Pierre Curie",
+          "description": "Married fellow physicist Pierre Curie",
+          "category": "personal"
+        },
+        {
+          "id": "e12",
+          "year": 1898,
+          "title": "Discovered Polonium and Radium",
+          "description": "Discovered two new elements: polonium and radium",
+          "category": "achievement"
+        },
+        {
+          "id": "e13",
+          "year": 1903,
+          "title": "Nobel Prize in Physics",
+          "description": "First woman to win a Nobel Prize, shared with Pierre and Becquerel",
+          "category": "achievement",
+          "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Marie_Curie_c._1920s.jpg/440px-Marie_Curie_c._1920s.jpg"
+        },
+        {
+          "id": "e14",
+          "year": 1906,
+          "title": "First Female Professor at Sorbonne",
+          "description": "Took over Pierre's teaching position after his death",
+          "category": "career"
+        },
+        {
+          "id": "e15",
+          "year": 1911,
+          "title": "Nobel Prize in Chemistry",
+          "description": "Second Nobel Prize, first person to win in two different sciences",
+          "category": "achievement"
+        },
+        {
+          "id": "e16",
+          "year": 1934,
+          "title": "Died in Savoy",
+          "description": "Died of aplastic anemia from radiation exposure",
+          "category": "death"
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "name": "Leonardo da Vinci",
+      "birthYear": 1452,
+      "deathYear": 1519,
+      "color": "#10b981",
+      "description": "Renaissance polymath: painter, sculptor, architect, scientist, and inventor",
+      "groupIds": [
+        "g2"
+      ],
+      "notes": "Leonardo kept extensive notebooks spanning roughly 13,000 pages.",
+      "events": [
+        {
+          "id": "e17",
+          "year": 1452,
+          "title": "Born in Vinci",
+          "description": "Born in Vinci, Republic of Florence",
+          "category": "birth"
+        },
+        {
+          "id": "e18",
+          "year": 1466,
+          "title": "Apprenticed to Verrocchio",
+          "description": "Began apprenticeship with artist Andrea del Verrocchio in Florence",
+          "category": "education"
+        },
+        {
+          "id": "e19",
+          "year": 1482,
+          "title": "Moved to Milan",
+          "description": "Entered the service of Ludovico Sforza, Duke of Milan",
+          "category": "career"
+        },
+        {
+          "id": "e20",
+          "year": 1490,
+          "title": "Vitruvian Man",
+          "description": "Created the iconic drawing of human proportions",
+          "category": "achievement",
+          "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Da_Vinci_Vitruve_Luc_Viatour.jpg/300px-Da_Vinci_Vitruve_Luc_Viatour.jpg"
+        },
+        {
+          "id": "e21",
+          "year": 1498,
+          "title": "The Last Supper",
+          "description": "Completed the famous mural painting in Milan",
+          "category": "achievement"
+        },
+        {
+          "id": "e22",
+          "year": 1503,
+          "title": "Mona Lisa",
+          "description": "Began painting the Mona Lisa",
+          "category": "achievement",
+          "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/400px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg"
+        },
+        {
+          "id": "e23",
+          "year": 1519,
+          "title": "Died in Amboise",
+          "description": "Died at Chateau du Clos Luce, Amboise, France",
+          "category": "death"
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "name": "Ada Lovelace",
+      "birthYear": 1815,
+      "deathYear": 1852,
+      "color": "#f59e0b",
+      "description": "Mathematician, recognized as the first computer programmer",
+      "groupIds": [
+        "g1"
+      ],
+      "notes": "She wrote what is considered the first algorithm intended to be carried out by a machine.",
+      "events": [
+        {
+          "id": "e24",
+          "year": 1815,
+          "title": "Born in London",
+          "description": "Born Augusta Ada Byron, daughter of Lord Byron",
+          "category": "birth"
+        },
+        {
+          "id": "e25",
+          "year": 1833,
+          "title": "Met Charles Babbage",
+          "description": "Introduced to Charles Babbage and his Difference Engine",
+          "category": "career"
+        },
+        {
+          "id": "e26",
+          "year": 1835,
+          "title": "Married Lord King",
+          "description": "Married William King, later Earl of Lovelace",
+          "category": "personal"
+        },
+        {
+          "id": "e27",
+          "year": 1843,
+          "title": "Published Algorithm",
+          "description": "Published the first computer algorithm for Babbage's Analytical Engine",
+          "category": "achievement",
+          "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ada_Lovelace_portrait.jpg/440px-Ada_Lovelace_portrait.jpg"
+        },
+        {
+          "id": "e28",
+          "year": 1852,
+          "title": "Died in London",
+          "description": "Died of uterine cancer at age 36",
+          "category": "death"
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "name": "Nikola Tesla",
+      "birthYear": 1856,
+      "deathYear": 1943,
+      "color": "#8b5cf6",
+      "description": "Inventor, electrical engineer, and futurist known for AC power",
+      "groupIds": [
+        "g1"
+      ],
+      "notes": "Tesla held over 300 patents and developed the AC electrical system used worldwide.",
+      "events": [
+        {
+          "id": "e29",
+          "year": 1856,
+          "title": "Born in Smiljan",
+          "description": "Born in Smiljan, Austrian Empire (modern Croatia)",
+          "category": "birth"
+        },
+        {
+          "id": "e30",
+          "year": 1884,
+          "title": "Arrived in America",
+          "description": "Emigrated to the United States",
+          "category": "personal"
+        },
+        {
+          "id": "e31",
+          "year": 1887,
+          "title": "Tesla Electric Company",
+          "description": "Founded his own company for electrical equipment",
+          "category": "career"
+        },
+        {
+          "id": "e32",
+          "year": 1888,
+          "title": "AC Motor Patent",
+          "description": "Patented the alternating current induction motor",
+          "category": "achievement"
+        },
+        {
+          "id": "e33",
+          "year": 1891,
+          "title": "Tesla Coil",
+          "description": "Invented the Tesla coil, a resonant transformer circuit",
+          "category": "achievement",
+          "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/N.Tesla.JPG/440px-N.Tesla.JPG"
+        },
+        {
+          "id": "e34",
+          "year": 1893,
+          "title": "Columbian Exposition",
+          "description": "AC power demonstrated at the Chicago World's Fair",
+          "category": "achievement"
+        },
+        {
+          "id": "e35",
+          "year": 1899,
+          "title": "Colorado Springs Lab",
+          "description": "Conducted high-voltage, high-frequency experiments",
+          "category": "career"
+        },
+        {
+          "id": "e36",
+          "year": 1943,
+          "title": "Died in New York",
+          "description": "Died alone at the New Yorker Hotel, Manhattan",
+          "category": "death"
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "name": "Frida Kahlo",
+      "birthYear": 1907,
+      "deathYear": 1954,
+      "color": "#ec4899",
+      "description": "Mexican artist known for self-portraits and works inspired by nature",
+      "groupIds": [
+        "g2"
+      ],
+      "notes": "She painted 55 self-portraits, celebrated as emblematic of Mexican traditions.",
+      "events": [
+        {
+          "id": "e37",
+          "year": 1907,
+          "title": "Born in Coyoacan",
+          "description": "Born in Mexico City",
+          "category": "birth"
+        },
+        {
+          "id": "e38",
+          "year": 1925,
+          "title": "Bus Accident",
+          "description": "Suffered near-fatal bus accident that shaped her life and art",
+          "category": "personal"
+        },
+        {
+          "id": "e39",
+          "year": 1929,
+          "title": "Married Diego Rivera",
+          "description": "Married muralist Diego Rivera",
+          "category": "personal"
+        },
+        {
+          "id": "e40",
+          "year": 1938,
+          "title": "First Solo Exhibition",
+          "description": "First solo exhibition at Julien Levy Gallery in New York",
+          "category": "achievement"
+        },
+        {
+          "id": "e41",
+          "year": 1939,
+          "title": "Exhibited in Paris",
+          "description": "The Louvre acquired The Frame, first Mexican artist in collection",
+          "category": "achievement"
+        },
+        {
+          "id": "e42",
+          "year": 1953,
+          "title": "Solo Exhibition in Mexico",
+          "description": "First solo exhibition in Mexico, attended on her hospital bed",
+          "category": "achievement"
+        },
+        {
+          "id": "e43",
+          "year": 1954,
+          "title": "Died in Coyoacan",
+          "description": "Died at La Casa Azul, her family home",
+          "category": "death"
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "name": "Isaac Newton",
+      "birthYear": 1643,
+      "deathYear": 1727,
+      "color": "#06b6d4",
+      "description": "Mathematician, physicist, and astronomer who formulated the laws of motion",
+      "groupIds": [
+        "g1"
+      ],
+      "notes": "Newton's Principia formulated the laws of motion and universal gravitation.",
+      "events": [
+        {
+          "id": "e44",
+          "year": 1643,
+          "title": "Born in Woolsthorpe",
+          "description": "Born in Woolsthorpe Manor, Lincolnshire, England",
+          "category": "birth"
+        },
+        {
+          "id": "e45",
+          "year": 1661,
+          "title": "Entered Cambridge",
+          "description": "Admitted to Trinity College, Cambridge",
+          "category": "education"
+        },
+        {
+          "id": "e46",
+          "year": 1666,
+          "title": "Annus Mirabilis",
+          "description": "Developed calculus, optics theories, and law of gravitation",
+          "category": "achievement"
+        },
+        {
+          "id": "e47",
+          "year": 1687,
+          "title": "Principia Published",
+          "description": "Published Philosophiae Naturalis Principia Mathematica",
+          "category": "achievement"
+        },
+        {
+          "id": "e48",
+          "year": 1703,
+          "title": "President of Royal Society",
+          "description": "Elected President of the Royal Society",
+          "category": "career"
+        },
+        {
+          "id": "e49",
+          "year": 1727,
+          "title": "Died in London",
+          "description": "Died in his sleep in London",
+          "category": "death"
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "name": "Cleopatra VII",
+      "birthYear": -69,
+      "deathYear": -30,
+      "color": "#f97316",
+      "description": "Last active ruler of the Ptolemaic Kingdom of Egypt",
+      "groupIds": [
+        "g3"
+      ],
+      "notes": "She spoke multiple languages and was known for her intelligence and political acumen.",
+      "events": [
+        {
+          "id": "e50",
+          "year": -69,
+          "title": "Born in Alexandria",
+          "description": "Born in Alexandria, Ptolemaic Kingdom of Egypt",
+          "category": "birth"
+        },
+        {
+          "id": "e51",
+          "year": -51,
+          "title": "Became Pharaoh",
+          "description": "Ascended to the throne as co-ruler with her brother",
+          "category": "career"
+        },
+        {
+          "id": "e52",
+          "year": -48,
+          "title": "Alliance with Caesar",
+          "description": "Formed a political and romantic alliance with Julius Caesar",
+          "category": "personal"
+        },
+        {
+          "id": "e53",
+          "year": -41,
+          "title": "Met Mark Antony",
+          "description": "Began alliance with Roman general Mark Antony",
+          "category": "personal"
+        },
+        {
+          "id": "e54",
+          "year": -30,
+          "title": "Died in Alexandria",
+          "description": "Died by suicide after the fall of Egypt to Rome",
+          "category": "death"
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "name": "Mozart",
+      "birthYear": 1756,
+      "deathYear": 1791,
+      "color": "#14b8a6",
+      "description": "Prolific and influential composer of the Classical period",
+      "groupIds": [
+        "g2"
+      ],
+      "notes": "Mozart composed more than 600 works.",
+      "events": [
+        {
+          "id": "e55",
+          "year": 1756,
+          "title": "Born in Salzburg",
+          "description": "Born Wolfgang Amadeus Mozart in Salzburg, Austria",
+          "category": "birth"
+        },
+        {
+          "id": "e56",
+          "year": 1762,
+          "title": "First European Tour",
+          "description": "Began touring European courts as a child prodigy at age 6",
+          "category": "career"
+        },
+        {
+          "id": "e57",
+          "year": 1770,
+          "title": "Italian Journey",
+          "description": "Toured Italy, studying opera and gaining fame",
+          "category": "education"
+        },
+        {
+          "id": "e58",
+          "year": 1782,
+          "title": "Married Constanze Weber",
+          "description": "Married Constanze Weber in Vienna",
+          "category": "personal"
+        },
+        {
+          "id": "e59",
+          "year": 1786,
+          "title": "The Marriage of Figaro",
+          "description": "Premiered one of his greatest operas in Vienna",
+          "category": "achievement"
+        },
+        {
+          "id": "e60",
+          "year": 1791,
+          "title": "The Magic Flute",
+          "description": "Composed The Magic Flute and began the Requiem",
+          "category": "achievement"
+        },
+        {
+          "id": "e61",
+          "year": 1791,
+          "title": "Died in Vienna",
+          "description": "Died in Vienna at age 35 under mysterious circumstances",
+          "category": "death"
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "name": "Martin Luther King Jr.",
+      "birthYear": 1929,
+      "deathYear": 1968,
+      "color": "#6366f1",
+      "description": "American civil rights leader and Nobel Peace Prize laureate",
+      "groupIds": [
+        "g3"
+      ],
+      "notes": "King advanced civil rights through nonviolence and civil disobedience.",
+      "events": [
+        {
+          "id": "e62",
+          "year": 1929,
+          "title": "Born in Atlanta",
+          "description": "Born Michael King Jr. in Atlanta, Georgia",
+          "category": "birth"
+        },
+        {
+          "id": "e63",
+          "year": 1955,
+          "title": "Montgomery Bus Boycott",
+          "description": "Led the 381-day bus boycott in Montgomery, Alabama",
+          "category": "achievement"
+        },
+        {
+          "id": "e64",
+          "year": 1963,
+          "title": "I Have a Dream",
+          "description": "Delivered iconic speech at the March on Washington",
+          "category": "achievement"
+        },
+        {
+          "id": "e65",
+          "year": 1964,
+          "title": "Nobel Peace Prize",
+          "description": "Awarded the Nobel Peace Prize for nonviolent resistance",
+          "category": "achievement"
+        },
+        {
+          "id": "e66",
+          "year": 1964,
+          "title": "Civil Rights Act",
+          "description": "Helped secure passage of the Civil Rights Act of 1964",
+          "category": "achievement"
+        },
+        {
+          "id": "e67",
+          "year": 1968,
+          "title": "Assassinated in Memphis",
+          "description": "Assassinated at the Lorraine Motel in Memphis, Tennessee",
+          "category": "death"
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "name": "Galileo Galilei",
+      "birthYear": 1564,
+      "deathYear": 1642,
+      "color": "#84cc16",
+      "description": "Italian astronomer, physicist, and father of modern observational astronomy",
+      "groupIds": [
+        "g1"
+      ],
+      "notes": "Called the father of observational astronomy and modern physics.",
+      "events": [
+        {
+          "id": "e68",
+          "year": 1564,
+          "title": "Born in Pisa",
+          "description": "Born in Pisa, Duchy of Florence",
+          "category": "birth"
+        },
+        {
+          "id": "e69",
+          "year": 1589,
+          "title": "Professor at Pisa",
+          "description": "Appointed professor of mathematics at the University of Pisa",
+          "category": "career"
+        },
+        {
+          "id": "e70",
+          "year": 1609,
+          "title": "Improved Telescope",
+          "description": "Built an improved telescope and began astronomical observations",
+          "category": "achievement"
+        },
+        {
+          "id": "e71",
+          "year": 1610,
+          "title": "Discovered Jupiter's Moons",
+          "description": "Discovered four largest moons of Jupiter",
+          "category": "achievement"
+        },
+        {
+          "id": "e72",
+          "year": 1633,
+          "title": "Trial by Inquisition",
+          "description": "Found guilty of heresy for supporting heliocentrism",
+          "category": "personal"
+        },
+        {
+          "id": "e73",
+          "year": 1642,
+          "title": "Died in Arcetri",
+          "description": "Died under house arrest in Arcetri, near Florence",
+          "category": "death"
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "name": "Queen Victoria",
+      "birthYear": 1819,
+      "deathYear": 1901,
+      "color": "#e11d48",
+      "description": "Queen of the United Kingdom, longest-reigning British monarch of the 19th century",
+      "groupIds": [
+        "g3"
+      ],
+      "notes": "Her reign of 63 years is known as the Victorian era.",
+      "events": [
+        {
+          "id": "e74",
+          "year": 1819,
+          "title": "Born at Kensington",
+          "description": "Born at Kensington Palace, London",
+          "category": "birth"
+        },
+        {
+          "id": "e75",
+          "year": 1837,
+          "title": "Became Queen",
+          "description": "Ascended to the throne at age 18",
+          "category": "career"
+        },
+        {
+          "id": "e76",
+          "year": 1840,
+          "title": "Married Prince Albert",
+          "description": "Married her cousin Prince Albert of Saxe-Coburg",
+          "category": "personal"
+        },
+        {
+          "id": "e77",
+          "year": 1851,
+          "title": "Great Exhibition",
+          "description": "Opened the Great Exhibition at the Crystal Palace",
+          "category": "achievement"
+        },
+        {
+          "id": "e78",
+          "year": 1876,
+          "title": "Empress of India",
+          "description": "Proclaimed Empress of India by the Royal Titles Act",
+          "category": "career"
+        },
+        {
+          "id": "e79",
+          "year": 1901,
+          "title": "Died at Osborne",
+          "description": "Died at Osborne House, Isle of Wight",
+          "category": "death"
+        }
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": "g1",
+      "name": "Scientists",
+      "visible": true,
+      "color": "#3b82f6"
+    },
+    {
+      "id": "g2",
+      "name": "Artists & Musicians",
+      "visible": true,
+      "color": "#ec4899"
+    },
+    {
+      "id": "g3",
+      "name": "Leaders & Royalty",
+      "visible": true,
+      "color": "#f59e0b"
+    }
+  ],
+  "connections": [
+    {
+      "fromId": "7",
+      "toId": "1",
+      "label": "Influenced",
+      "color": "#60a5fa"
+    },
+    {
+      "fromId": "11",
+      "toId": "7",
+      "label": "Inspired",
+      "color": "#34d399"
+    },
+    {
+      "fromId": "4",
+      "toId": "5",
+      "label": "Computing pioneers",
+      "color": "#a78bfa"
+    }
+  ],
+  "eras": [
+    {
+      "id": "era1",
+      "name": "Renaissance",
+      "startYear": 1400,
+      "endYear": 1600,
+      "color": "#10b98160"
+    },
+    {
+      "id": "era2",
+      "name": "Enlightenment",
+      "startYear": 1685,
+      "endYear": 1815,
+      "color": "#3b82f660"
+    },
+    {
+      "id": "era3",
+      "name": "Industrial Revolution",
+      "startYear": 1760,
+      "endYear": 1840,
+      "color": "#f59e0b60"
+    },
+    {
+      "id": "era4",
+      "name": "Modern Era",
+      "startYear": 1900,
+      "endYear": 2000,
+      "color": "#8b5cf660"
+    }
+  ]
+}
