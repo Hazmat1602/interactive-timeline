@@ -197,6 +197,27 @@ interface ProxyConfig {
 }
 
 const TIMELINE_IMAGE_CACHE = 'timeline-image-cache-v1'
+const TIMELINE_AUTOSAVE_KEY = 'interactive-timeline-autosave-v1'
+
+function normalizeImportedSnapshot(raw: Partial<TimelineSnapshot>): TimelineSnapshot | null {
+  if (!Array.isArray(raw.people) || !Array.isArray(raw.groups) || !Array.isArray(raw.connections) || !Array.isArray(raw.eras)) return null
+
+  const people = raw.people
+  const groups = raw.groups
+  const connections = raw.connections
+  const eras = raw.eras
+  const allPersonIds = new Set(people.map(p => p.id))
+  const ordered = Array.isArray(raw.personOrder) ? raw.personOrder.filter(id => allPersonIds.has(id)) : []
+  const missing = people.map(p => p.id).filter(id => !ordered.includes(id))
+
+  return {
+    people,
+    groups,
+    connections: connections.filter(c => allPersonIds.has(c.fromId) && allPersonIds.has(c.toId) && c.fromId !== c.toId),
+    personOrder: [...ordered, ...missing],
+    eras: eras.filter(e => e.startYear < e.endYear),
+  }
+}
 
 const isTauri = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
@@ -282,6 +303,7 @@ function App() {
   const [showEras, setShowEras] = useState(true)
   const [exportingPng, setExportingPng] = useState(false)
   const [proxyConfig, setProxyConfig] = useState<ProxyConfig | null>(null)
+  const [autoSaveState, setAutoSaveState] = useState<'saved' | 'error' | 'idle'>('idle')
   const [hiddenPeopleIds, setHiddenPeopleIds] = useState<Set<string>>(new Set())
   const [cachedImageSrcs, setCachedImageSrcs] = useState<Record<string, string>>({})
   const timelineRef = useRef<HTMLDivElement>(null)
@@ -342,6 +364,41 @@ function App() {
     imageObjectUrlsRef.current.clear()
     imageCachePromisesRef.current.clear()
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const saved = window.localStorage.getItem(TIMELINE_AUTOSAVE_KEY)
+      if (!saved) return
+      const parsed = JSON.parse(saved) as Partial<TimelineSnapshot>
+      const normalized = normalizeImportedSnapshot(parsed)
+      if (!normalized) return
+      setPeople(normalized.people)
+      setGroups(normalized.groups)
+      setConnections(normalized.connections)
+      setPersonOrder(normalized.personOrder)
+      setEras(normalized.eras)
+      setAutoSaveState('saved')
+    } catch (err) {
+      console.error('Failed to restore autosaved timeline', err)
+      setAutoSaveState('error')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const saveTimer = window.setTimeout(() => {
+      try {
+        const payload: TimelineSnapshot = { people, groups, connections, personOrder, eras }
+        window.localStorage.setItem(TIMELINE_AUTOSAVE_KEY, JSON.stringify(payload))
+        setAutoSaveState('saved')
+      } catch (err) {
+        console.error('Failed to autosave timeline', err)
+        setAutoSaveState('error')
+      }
+    }, 350)
+    return () => window.clearTimeout(saveTimer)
+  }, [people, groups, connections, personOrder, eras])
 
   const visibleGroupIds = useMemo(() => {
     const s = new Set<string>()
@@ -460,7 +517,12 @@ function App() {
   }, [sortBy, sortRankMap])
 
   const togglePersonVisibility = (pid: string) => {
-    setHiddenPeopleIds(prev => { const n = new Set(prev); n.has(pid) ? n.delete(pid) : n.add(pid); return n })
+    setHiddenPeopleIds(prev => {
+      const n = new Set(prev)
+      if (n.has(pid)) n.delete(pid)
+      else n.add(pid)
+      return n
+    })
   }
 
   const eraRows = useMemo(() => {
@@ -499,9 +561,19 @@ function App() {
   const handleMouseUp = useCallback(() => setIsDragging(false), [])
   useEffect(() => { const h = () => setIsDragging(false); window.addEventListener('mouseup', h); return () => window.removeEventListener('mouseup', h) }, [])
 
-  const zoomIn = () => { const c = (viewStart + viewEnd) / 2, r = Math.max(20, tw * 0.7); setViewStart(Math.round(c - r / 2)); setViewEnd(Math.round(c + r / 2)) }
-  const zoomOut = () => { const c = (viewStart + viewEnd) / 2, r = Math.min(3000, tw * 1.4); setViewStart(Math.round(c - r / 2)); setViewEnd(Math.round(c + r / 2)) }
-  const resetView = () => {
+  const zoomIn = useCallback(() => {
+    const c = (viewStart + viewEnd) / 2
+    const r = Math.max(20, tw * 0.7)
+    setViewStart(Math.round(c - r / 2))
+    setViewEnd(Math.round(c + r / 2))
+  }, [viewStart, viewEnd, tw])
+  const zoomOut = useCallback(() => {
+    const c = (viewStart + viewEnd) / 2
+    const r = Math.min(3000, tw * 1.4)
+    setViewStart(Math.round(c - r / 2))
+    setViewEnd(Math.round(c + r / 2))
+  }, [viewStart, viewEnd, tw])
+  const resetView = useCallback(() => {
     const visible = people.filter(p => (!p.groupIds?.length || p.groupIds.some(gid => visibleGroupIds.has(gid))) && !hiddenPeopleIds.has(p.id))
     if (!visible.length) { setViewStart(1400); setViewEnd(1970); return }
     const minY = Math.min(...visible.map(p => p.birthYear))
@@ -510,10 +582,29 @@ function App() {
     const namePad = Math.max(40, range * 0.15)
     setViewStart(Math.round(minY - namePad))
     setViewEnd(Math.round(maxY + 20))
-  }
+  }, [people, visibleGroupIds, hiddenPeopleIds])
   const hideAllPeople = () => setHiddenPeopleIds(new Set(people.map(p => p.id)))
   const showAllPeople = () => setHiddenPeopleIds(new Set())
   const allPeopleVisible = hiddenPeopleIds.size === 0
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault()
+        zoomIn()
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault()
+        zoomOut()
+      } else if (e.key === '0') {
+        e.preventDefault()
+        resetView()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [zoomIn, zoomOut, resetView])
 
   const getTickMarks = useMemo(() => {
     const range = viewEnd - viewStart
@@ -559,7 +650,14 @@ function App() {
   const addInlineGroup = () => { if (!inlineNewGroupName.trim()) return; const g = addGroup(inlineNewGroupName.trim()); setInlineNewGroupName(''); setShowInlineNewGroup(null); return g }
   const deleteGroup = (gid: string) => { setGroups(groups.filter(g => g.id !== gid)); setPeople(people.map(p => p.groupIds?.includes(gid) ? { ...p, groupIds: p.groupIds.filter(id => id !== gid).length ? p.groupIds.filter(id => id !== gid) : undefined } : p)) }
   const saveGroupName = (gid: string) => { if (!editingGroupName.trim()) return; setGroups(groups.map(g => g.id === gid ? { ...g, name: editingGroupName.trim() } : g)); setEditingGroupId(null) }
-  const toggleCollapseGroup = (gid: string) => { setCollapsedGroups(prev => { const n = new Set(prev); n.has(gid) ? n.delete(gid) : n.add(gid); return n }) }
+  const toggleCollapseGroup = (gid: string) => {
+    setCollapsedGroups(prev => {
+      const n = new Set(prev)
+      if (n.has(gid)) n.delete(gid)
+      else n.add(gid)
+      return n
+    })
+  }
   const formatYear = (y: number) => y < 0 ? Math.abs(y) + ' BC' : '' + y
 
   const addEra = () => {
@@ -572,11 +670,16 @@ function App() {
   const removeEra = (id: string) => setEras(eras.filter(e => e.id !== id))
 
   const applyImportedData = (d: Partial<TimelineSnapshot>) => {
-    if (d.people) setPeople(d.people)
-    if (d.groups) setGroups(d.groups)
-    if (d.connections) setConnections(d.connections)
-    if (d.personOrder) setPersonOrder(d.personOrder)
-    if (d.eras) setEras(d.eras)
+    const normalized = normalizeImportedSnapshot(d)
+    if (!normalized) {
+      alert('Invalid timeline file format')
+      return
+    }
+    setPeople(normalized.people)
+    setGroups(normalized.groups)
+    setConnections(normalized.connections)
+    setPersonOrder(normalized.personOrder)
+    setEras(normalized.eras)
   }
 
   const exportData = async () => {
@@ -653,6 +756,14 @@ function App() {
 
   const addConnection = () => {
     if (!newConnection.fromId || !newConnection.toId || newConnection.fromId === newConnection.toId) return
+    const duplicateExists = connections.some(c =>
+      (c.fromId === newConnection.fromId && c.toId === newConnection.toId) ||
+      (c.fromId === newConnection.toId && c.toId === newConnection.fromId),
+    )
+    if (duplicateExists) {
+      alert('That connection already exists.')
+      return
+    }
     setConnections([...connections, {fromId: newConnection.fromId, toId: newConnection.toId, label: newConnection.label || 'Connected', color: CONNECTION_COLORS[connections.length % CONNECTION_COLORS.length]}])
     setNewConnection({fromId: '', toId: '', label: ''}); setShowAddConnection(false)
   }
@@ -962,6 +1073,9 @@ function App() {
               <button onClick={exportAsPng} disabled={exportingPng} className={`flex items-center gap-1.5 px-2 py-1 text-xs ${mt} ${hov} rounded-md transition-colors w-full ${exportingPng ? 'opacity-50' : ''}`}>
                 <Camera size={12} /> {exportingPng ? 'Exporting...' : 'Export as PNG'}
               </button>
+              <div className={`px-2 pt-1 text-[11px] ${autoSaveState === 'error' ? 'text-red-400' : mt}`}>
+                {autoSaveState === 'saved' ? 'Autosave: on (stored locally)' : autoSaveState === 'error' ? 'Autosave failed (check browser storage settings)' : 'Autosave: idle'}
+              </div>
             </div>
           </div>
         </aside>
@@ -975,7 +1089,7 @@ function App() {
               <button onClick={resetView} className={`p-1.5 ${iBg} ${hov} rounded-lg transition-colors`} title="Fit All"><RotateCcw size={14} /></button>
               <span className={`text-xs ${mt} ml-2`}>{formatYear(viewStart)} - {formatYear(viewEnd)} ({viewEnd - viewStart} yrs)</span>
             </div>
-            <div className={`text-xs ${mt}`}>Use +/- to zoom | Drag to pan | Hover events for details</div>
+            <div className={`text-xs ${mt}`}>Use +/- to zoom, 0 to fit | Drag to pan | Hover events for details</div>
           </div>
 
           <div ref={timelineRef} className="flex-1 overflow-y-auto px-6 py-3" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} style={{cursor: isDragging ? 'grabbing' : 'grab'}}>
@@ -1231,11 +1345,11 @@ function App() {
       {/* Hover popout */}
       {hoveredEvent && (() => {
         const pw = hoveredEvent.event.imageUrl ? 320 : 280, ph = hoveredEvent.event.imageUrl ? 280 : 120, pad = 12
-        let left = hoveredEvent.x, top = hoveredEvent.y - 10, tx = '-50%', ty = '-100%'
+        let left = hoveredEvent.x, top = hoveredEvent.y - 10, ty = '-100%'
         if (left - pw / 2 < pad) left = pad + pw / 2
         if (left + pw / 2 > window.innerWidth - pad) left = window.innerWidth - pad - pw / 2
         if (top - ph < pad) { top = hoveredEvent.y + 20; ty = '0%' }
-        return <div className="fixed z-50 pointer-events-none" style={{left: left + 'px', top: top + 'px', transform: `translate(${tx}, ${ty})`}}>
+        return <div className="fixed z-50 pointer-events-none" style={{left: left + 'px', top: top + 'px', transform: `translate(-50%, ${ty})`}}>
           <div className={pBg + ' border ' + pBo + ' rounded-xl shadow-2xl overflow-hidden'} style={{width: pw + 'px', maxHeight: (window.innerHeight - pad * 2) + 'px'}}>
             {hoveredEvent.event.imageUrl && <div className={'w-full overflow-hidden flex items-center justify-center ' + iBg} style={{maxHeight: '200px'}}><img src={resolveImageSrc(hoveredEvent.event.imageUrl)} alt={hoveredEvent.event.title} className="max-w-full max-h-full object-contain" style={{maxHeight: '200px'}} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} /></div>}
             <div className="px-4 py-3">
