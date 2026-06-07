@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react'
-import { ZoomIn, ZoomOut, RotateCcw, ChevronDown, ChevronUp, Plus, Trash2, X, Edit2, Check, Search, Layers, Image, FolderOpen, Eye, EyeOff, ChevronRight, Download, Upload, Sun, Moon, Camera, GripVertical, Link, Users, List } from 'lucide-react'
+import { ZoomIn, ZoomOut, RotateCcw, ChevronDown, ChevronUp, Plus, Trash2, X, Edit2, Check, Search, Layers, Image, FolderOpen, Eye, EyeOff, ChevronRight, Download, Upload, Sun, Moon, Camera, GripVertical, Link, Users, List, Globe } from 'lucide-react'
 import './App.css'
 
 interface LifeEvent {
@@ -7,7 +7,7 @@ interface LifeEvent {
   year: number
   title: string
   description: string
-  category: 'birth' | 'death' | 'career' | 'personal' | 'achievement' | 'education' | 'other'
+  category: 'birth' | 'death' | 'career' | 'personal' | 'achievement' | 'education' | 'military' | 'political' | 'founding' | 'collapse' | 'other'
   imageUrl?: string
 }
 
@@ -21,6 +21,7 @@ interface Person {
   description: string
   groupIds?: string[]
   notes?: string
+  type?: 'person' | 'historical_event'
 }
 
 interface Group {
@@ -61,16 +62,20 @@ const initialGroups: Group[] = [
   { id: 'g1', name: 'Scientists', visible: true, color: '#3b82f6' },
   { id: 'g2', name: 'Artists & Musicians', visible: true, color: '#ec4899' },
   { id: 'g3', name: 'Leaders & Royalty', visible: true, color: '#f59e0b' },
+  { id: 'g4', name: 'Wars & Conflicts', visible: true, color: '#dc2626' },
+  { id: 'g5', name: 'Empires & Civilizations', visible: true, color: '#65a30d' },
 ]
 
-const CC: Record<LifeEvent['category'], string> = { birth: '#10b981', death: '#6b7280', career: '#3b82f6', personal: '#f59e0b', achievement: '#8b5cf6', education: '#ec4899', other: '#64748b' }
-const CL: Record<LifeEvent['category'], string> = { birth: 'Birth', death: 'Death', career: 'Career', personal: 'Personal', achievement: 'Achievement', education: 'Education', other: 'Other' }
+const CC: Record<LifeEvent['category'], string> = { birth: '#10b981', death: '#6b7280', career: '#3b82f6', personal: '#f59e0b', achievement: '#8b5cf6', education: '#ec4899', military: '#dc2626', political: '#0891b2', founding: '#65a30d', collapse: '#9f1239', other: '#64748b' }
+const CL: Record<LifeEvent['category'], string> = { birth: 'Birth', death: 'Death', career: 'Career', personal: 'Personal', achievement: 'Achievement', education: 'Education', military: 'Military', political: 'Political', founding: 'Founding', collapse: 'Collapse', other: 'Other' }
 const PERSON_COLORS = ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316','#14b8a6','#6366f1','#84cc16','#e11d48','#0ea5e9','#a855f7','#22c55e']
 
 const initialConnections: Connection[] = [
   { fromId: '7', toId: '1', label: 'Influenced', color: '#60a5fa' },
   { fromId: '11', toId: '7', label: 'Inspired', color: '#34d399' },
   { fromId: '4', toId: '5', label: 'Computing pioneers', color: '#a78bfa' },
+  { fromId: '15', toId: '13', label: 'Led to', color: '#f87171' },
+  { fromId: '8', toId: '14', label: 'Preceded', color: '#4ade80' },
 ]
 
 const initialPeople: Person[] = [
@@ -177,6 +182,40 @@ const initialPeople: Person[] = [
     { id: 'e78', year: 1876, title: 'Empress of India', description: 'Proclaimed Empress of India by the Royal Titles Act', category: 'career' },
     { id: 'e79', year: 1901, title: 'Died at Osborne', description: 'Died at Osborne House, Isle of Wight', category: 'death' },
   ]},
+  { id: '13', name: 'World War II', birthYear: 1939, deathYear: 1945, color: '#dc2626', description: 'The deadliest global conflict in history, involving most of the world\'s nations', groupIds: ['g4'], type: 'historical_event', notes: 'Estimated 70-85 million fatalities. Resulted in the United Nations, decolonization, and the Cold War.', events: [
+    { id: 'e80', year: 1939, title: 'War Begins', description: 'Germany invades Poland; Britain and France declare war', category: 'founding' },
+    { id: 'e81', year: 1940, title: 'Fall of France', description: 'Germany conquers France in six weeks; Dunkirk evacuation', category: 'military' },
+    { id: 'e82', year: 1940, title: 'Battle of Britain', description: 'RAF defends UK against German Luftwaffe bombing campaign', category: 'military' },
+    { id: 'e83', year: 1941, title: 'Operation Barbarossa', description: 'Germany invades the Soviet Union, opening the Eastern Front', category: 'military' },
+    { id: 'e84', year: 1941, title: 'Pearl Harbor', description: 'Japan attacks Pearl Harbor; United States enters the war', category: 'military', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/The_USS_Arizona_%28BB-39%29_burning_after_the_Japanese_attack_on_Pearl_Harbor_-_NARA_195617_-_Edit.jpg/440px-The_USS_Arizona_%28BB-39%29_burning_after_the_Japanese_attack_on_Pearl_Harbor_-_NARA_195617_-_Edit.jpg' },
+    { id: 'e85', year: 1942, title: 'Battle of Stalingrad', description: 'Turning point on the Eastern Front; massive Soviet victory', category: 'military' },
+    { id: 'e86', year: 1943, title: 'Allied Invasion of Italy', description: 'Allies invade Sicily and mainland Italy; Mussolini deposed', category: 'military' },
+    { id: 'e87', year: 1944, title: 'D-Day', description: 'Allied forces land in Normandy, opening the Western Front', category: 'military', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Into_the_Jaws_of_Death_23-0455M_edit.jpg/440px-Into_the_Jaws_of_Death_23-0455M_edit.jpg' },
+    { id: 'e88', year: 1945, title: 'Fall of Berlin', description: 'Soviet forces capture Berlin; Hitler commits suicide', category: 'military' },
+    { id: 'e89', year: 1945, title: 'Atomic Bombs', description: 'US drops atomic bombs on Hiroshima and Nagasaki', category: 'military' },
+    { id: 'e90', year: 1945, title: 'War Ends', description: 'Japan surrenders unconditionally; World War II concludes', category: 'collapse' },
+  ]},
+  { id: '14', name: 'Roman Empire', birthYear: -27, deathYear: 476, color: '#65a30d', description: 'One of the largest empires in ancient history, centered on the Mediterranean', groupIds: ['g5'], type: 'historical_event', notes: 'At its height under Trajan (117 AD), the Roman Empire spanned 5 million km² and governed 70 million people.', events: [
+    { id: 'e91', year: -27, title: 'Empire Founded', description: 'Octavian becomes Augustus, first Roman Emperor', category: 'founding', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Statue-Augustus.jpg/300px-Statue-Augustus.jpg' },
+    { id: 'e92', year: 14, title: 'Death of Augustus', description: 'Augustus dies; Tiberius becomes emperor', category: 'political' },
+    { id: 'e93', year: 64, title: 'Great Fire of Rome', description: 'Devastating fire destroys much of Rome under Nero', category: 'other' },
+    { id: 'e94', year: 80, title: 'Colosseum Completed', description: 'Flavian Amphitheatre completed under Emperor Titus', category: 'achievement', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Colosseo_2020.jpg/440px-Colosseo_2020.jpg' },
+    { id: 'e95', year: 117, title: 'Greatest Extent', description: 'Empire reaches maximum territorial extent under Trajan', category: 'achievement' },
+    { id: 'e96', year: 212, title: 'Edict of Caracalla', description: 'Roman citizenship extended to all free inhabitants of the empire', category: 'political' },
+    { id: 'e97', year: 285, title: 'Diocletian\'s Reforms', description: 'Empire divided into Eastern and Western administrative halves', category: 'political' },
+    { id: 'e98', year: 313, title: 'Edict of Milan', description: 'Christianity legalized throughout the Roman Empire', category: 'political' },
+    { id: 'e99', year: 380, title: 'Christianity State Religion', description: 'Theodosius I makes Christianity the official state religion', category: 'political' },
+    { id: 'e100', year: 410, title: 'Sack of Rome', description: 'Visigoths under Alaric I sack Rome for the first time in 800 years', category: 'military' },
+    { id: 'e101', year: 476, title: 'Fall of Western Empire', description: 'Last Western Roman Emperor Romulus Augustulus deposed by Odoacer', category: 'collapse' },
+  ]},
+  { id: '15', name: 'World War I', birthYear: 1914, deathYear: 1918, color: '#b91c1c', description: 'The Great War: first global industrial-scale conflict', groupIds: ['g4'], type: 'historical_event', notes: 'Known as "the war to end all wars." Resulted in the collapse of four empires and over 17 million deaths.', events: [
+    { id: 'e102', year: 1914, title: 'War Begins', description: 'Assassination of Archduke Franz Ferdinand triggers declarations of war', category: 'founding' },
+    { id: 'e103', year: 1915, title: 'Gallipoli Campaign', description: 'Failed Allied campaign to control the Dardanelles strait', category: 'military' },
+    { id: 'e104', year: 1916, title: 'Battle of the Somme', description: 'One of the bloodiest battles in history with over 1 million casualties', category: 'military' },
+    { id: 'e105', year: 1917, title: 'US Enters the War', description: 'United States declares war on Germany', category: 'political' },
+    { id: 'e106', year: 1917, title: 'Russian Revolution', description: 'Bolshevik Revolution leads to Russia\'s withdrawal from the war', category: 'political' },
+    { id: 'e107', year: 1918, title: 'Armistice', description: 'Armistice signed on November 11; fighting ceases on the Western Front', category: 'collapse' },
+  ]},
 ]
 
 function genId(): string { return Math.random().toString(36).substring(2, 9) }
@@ -251,6 +290,8 @@ function App() {
   const [dragStartX, setDragStartX] = useState(0)
   const [dragStartView, setDragStartView] = useState({start: 0, end: 0})
   const [showAddPerson, setShowAddPerson] = useState(false)
+  const [showAddHistoricalEvent, setShowAddHistoricalEvent] = useState(false)
+  const [newHistoricalEvent, setNewHistoricalEvent] = useState({name: '', startYear: '', endYear: '', description: '', groupIds: [] as string[], notes: ''})
   const [editingPerson, setEditingPerson] = useState<Person | null>(null)
   const [newPerson, setNewPerson] = useState({name: '', birthYear: '', deathYear: '', description: '', groupIds: [] as string[], notes: ''})
   const [showAddEvent, setShowAddEvent] = useState<string | null>(null)
@@ -531,6 +572,14 @@ function App() {
     setPeople([...people, p]); setPersonOrder([...personOrder, p.id]); setNewPerson({name: '', birthYear: '', deathYear: '', description: '', groupIds: [], notes: ''}); setShowAddPerson(false)
   }
 
+  const addHistoricalEvent = () => {
+    if (!newHistoricalEvent.name || !newHistoricalEvent.startYear) return
+    const sy = parseInt(newHistoricalEvent.startYear), ey = newHistoricalEvent.endYear ? parseInt(newHistoricalEvent.endYear) : null
+    if (isNaN(sy)) return
+    const p: Person = { id: genId(), name: newHistoricalEvent.name, birthYear: sy, deathYear: ey, color: PERSON_COLORS[people.length % PERSON_COLORS.length], description: newHistoricalEvent.description, type: 'historical_event', groupIds: newHistoricalEvent.groupIds.length ? newHistoricalEvent.groupIds : undefined, notes: newHistoricalEvent.notes || undefined, events: [{ id: genId(), year: sy, title: 'Began', description: newHistoricalEvent.name + ' began', category: 'founding' }, ...(ey ? [{ id: genId(), year: ey, title: 'Ended', description: newHistoricalEvent.name + ' ended', category: 'collapse' as const }] : [])] }
+    setPeople([...people, p]); setPersonOrder([...personOrder, p.id]); setNewHistoricalEvent({name: '', startYear: '', endYear: '', description: '', groupIds: [], notes: ''}); setShowAddHistoricalEvent(false)
+  }
+
   const removePerson = (id: string) => {
     setPeople(people.filter(p => p.id !== id)); setPersonOrder(personOrder.filter(pid => pid !== id))
     setConnections(connections.filter(c => c.fromId !== id && c.toId !== id))
@@ -704,7 +753,7 @@ function App() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Interactive Timeline</h1>
-            <p className={`text-xs ${st} mt-0.5`}>Explore the lives and achievements of remarkable people</p>
+            <p className={`text-xs ${st} mt-0.5`}>Explore the lives of remarkable people and pivotal events in history</p>
             {proxyConfig && (proxyConfig.http_proxy || proxyConfig.https_proxy || proxyConfig.all_proxy) && (
               <p className={`text-[11px] ${st} mt-1`}>Desktop proxy detected (HTTP/HTTPS)</p>
             )}
@@ -726,6 +775,9 @@ function App() {
             <button onClick={() => setShowAddPerson(true)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-white">
               <Plus size={16} /> Add Person
             </button>
+            <button onClick={() => setShowAddHistoricalEvent(true)} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-white">
+              <Globe size={16} /> Add Event
+            </button>
           </div>
         </div>
       </header>
@@ -740,7 +792,7 @@ function App() {
             </div>
             <div className="mt-2">
               <div className="flex items-center justify-between mb-1">
-                <span className={`text-xs ${mt}`}>{filteredPeople.length} people</span>
+                <span className={`text-xs ${mt}`}>{filteredPeople.length} items</span>
                 <label className="flex items-center gap-1">
                   <span className={`text-xs ${mt}`}>Sort:</span>
                   <select
@@ -1079,17 +1131,19 @@ function App() {
                       return { conn, idx, isOutgoing, otherPerson }
                     })
                     .filter(Boolean) as { conn: Connection; idx: number; isOutgoing: boolean; otherPerson: Person }[]
+                  const isHistorical = person.type === 'historical_event'
                   return (
                     <div key={person.id} className="relative" style={{marginBottom: compactMode ? '4px' : '8px', height: isExp ? 'auto' : rowH + 'px'}}>
                       {/* Life bar with name label inline */}
                       <div className="relative flex items-center" style={{height: barH + 'px'}}>
-                        <div className={'absolute ' + barTh + ' rounded-full transition-all duration-200 ' + (isSel ? 'ring-2 ring-white/30 ' + barHvTh : 'hover:' + barHvTh)}
-                          style={{left: bl + '%', width: Math.max(0.5, br - bl) + '%', backgroundColor: person.color + '30', borderLeft: '3px solid ' + person.color, borderRight: person.deathYear ? '3px solid ' + person.color : 'none'}}>
-                          <div className="absolute inset-0 rounded-full" style={{background: 'linear-gradient(90deg, ' + person.color + '20, ' + person.color + '40, ' + person.color + '20)'}} />
+                        <div className={'absolute ' + barTh + ' transition-all duration-200 ' + (isHistorical ? 'rounded-md' : 'rounded-full') + ' ' + (isSel ? 'ring-2 ring-white/30 ' + barHvTh : 'hover:' + barHvTh)}
+                          style={{left: bl + '%', width: Math.max(0.5, br - bl) + '%', backgroundColor: person.color + (isHistorical ? '25' : '30'), borderLeft: '3px solid ' + person.color, borderRight: person.deathYear ? '3px solid ' + person.color : 'none', borderTop: isHistorical ? '1px dashed ' + person.color + '80' : 'none', borderBottom: isHistorical ? '1px dashed ' + person.color + '80' : 'none'}}>
+                          <div className={'absolute inset-0 ' + (isHistorical ? 'rounded-md' : 'rounded-full')} style={{background: isHistorical ? ('repeating-linear-gradient(135deg, ' + person.color + '08, ' + person.color + '08 4px, ' + person.color + '18 4px, ' + person.color + '18 8px)') : ('linear-gradient(90deg, ' + person.color + '20, ' + person.color + '40, ' + person.color + '20)')}} />
                         </div>
                         {/* Name label positioned at the start of the bar */}
                         <div className="absolute z-30 flex items-center" style={{left: Math.max(0, bl) + '%', transform: 'translateX(-100%) translateX(-8px)', height: barH + 'px'}}>
-                          <div className={(d ? 'bg-gray-900/90' : 'bg-white/90') + ' backdrop-blur-sm border rounded-md shadow-lg whitespace-nowrap ' + (compactMode ? 'px-2 py-0.5 text-xs' : 'px-3 py-1.5 text-xs font-medium')} style={{borderColor: person.color + '40', color: person.color}}>
+                          <div className={(d ? 'bg-gray-900/90' : 'bg-white/90') + ' backdrop-blur-sm border rounded-md shadow-lg whitespace-nowrap flex items-center gap-1 ' + (compactMode ? 'px-2 py-0.5 text-xs' : 'px-3 py-1.5 text-xs font-medium')} style={{borderColor: person.color + '40', color: person.color}}>
+                            {isHistorical && <Globe size={compactMode ? 10 : 12} />}
                             {person.name}
                           </div>
                         </div>
@@ -1294,14 +1348,14 @@ function App() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center" onClick={() => setEditingPerson(null)}>
           <div className={cBg + ' border ' + bc + ' rounded-2xl p-6 w-full max-w-md shadow-2xl'} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">Edit Person</h2>
+              <h2 className="text-lg font-bold">{editingPerson.type === 'historical_event' ? 'Edit Historical Event' : 'Edit Person'}</h2>
               <button onClick={() => setEditingPerson(null)} className={'p-1 ' + hov + ' rounded-lg transition-colors'}><X size={20} /></button>
             </div>
             <div className="space-y-3">
               <input placeholder="Name" value={editingPerson.name} onChange={e => setEditingPerson({...editingPerson, name: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
               <div className="grid grid-cols-2 gap-3">
-                <input type="number" placeholder="Birth Year" value={editingPerson.birthYear} onChange={e => setEditingPerson({...editingPerson, birthYear: parseInt(e.target.value) || 0})} className={`${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
-                <input type="number" placeholder="Death Year (optional)" value={editingPerson.deathYear ?? ''} onChange={e => setEditingPerson({...editingPerson, deathYear: e.target.value ? parseInt(e.target.value) : null})} className={`${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+                <input type="number" placeholder={editingPerson.type === 'historical_event' ? 'Start Year' : 'Birth Year'} value={editingPerson.birthYear} onChange={e => setEditingPerson({...editingPerson, birthYear: parseInt(e.target.value) || 0})} className={`${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+                <input type="number" placeholder={editingPerson.type === 'historical_event' ? 'End Year (optional)' : 'Death Year (optional)'} value={editingPerson.deathYear ?? ''} onChange={e => setEditingPerson({...editingPerson, deathYear: e.target.value ? parseInt(e.target.value) : null})} className={`${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
               </div>
               <textarea placeholder="Short description" value={editingPerson.description} onChange={e => setEditingPerson({...editingPerson, description: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-16`} />
               <textarea placeholder="Notes (optional)" value={editingPerson.notes || ''} onChange={e => setEditingPerson({...editingPerson, notes: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-16`} />
@@ -1369,15 +1423,43 @@ function App() {
             </div>
             <div className="space-y-3">
               <select value={newConnection.fromId} onChange={e => setNewConnection({...newConnection, fromId: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}>
-                <option value="">From person...</option>
-                {people.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                <option value="">From...</option>
+                {people.map(p => <option key={p.id} value={p.id}>{p.type === 'historical_event' ? '🌍 ' : ''}{p.name}</option>)}
               </select>
               <select value={newConnection.toId} onChange={e => setNewConnection({...newConnection, toId: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}>
-                <option value="">To person...</option>
-                {people.filter(p => p.id !== newConnection.fromId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                <option value="">To...</option>
+                {people.filter(p => p.id !== newConnection.fromId).map(p => <option key={p.id} value={p.id}>{p.type === 'historical_event' ? '🌍 ' : ''}{p.name}</option>)}
               </select>
-              <input placeholder="Relationship label (e.g. Influenced, Mentored)" value={newConnection.label} onChange={e => setNewConnection({...newConnection, label: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+              <input placeholder="Relationship label (e.g. Influenced, Led to, During)" value={newConnection.label} onChange={e => setNewConnection({...newConnection, label: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
               <button onClick={addConnection} disabled={!newConnection.fromId || !newConnection.toId} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-white">Add Connection</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Historical Event Modal */}
+      {showAddHistoricalEvent && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center" onClick={() => setShowAddHistoricalEvent(false)}>
+          <div className={cBg + ' border ' + bc + ' rounded-2xl p-6 w-full max-w-md shadow-2xl'} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">Add Historical Event</h2>
+              <button onClick={() => setShowAddHistoricalEvent(false)} className={'p-1 ' + hov + ' rounded-lg transition-colors'}><X size={20} /></button>
+            </div>
+            <div className="space-y-3">
+              <input placeholder="Event name (e.g. World War II, Roman Empire)" value={newHistoricalEvent.name} onChange={e => setNewHistoricalEvent({...newHistoricalEvent, name: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} autoFocus />
+              <div className="grid grid-cols-2 gap-3">
+                <input type="number" placeholder="Start Year" value={newHistoricalEvent.startYear} onChange={e => setNewHistoricalEvent({...newHistoricalEvent, startYear: e.target.value})} className={`${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+                <input type="number" placeholder="End Year (optional)" value={newHistoricalEvent.endYear} onChange={e => setNewHistoricalEvent({...newHistoricalEvent, endYear: e.target.value})} className={`${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`} />
+              </div>
+              <textarea placeholder="Short description (optional)" value={newHistoricalEvent.description} onChange={e => setNewHistoricalEvent({...newHistoricalEvent, description: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-16`} />
+              <textarea placeholder="Notes (optional) - key facts, outcomes, significance..." value={newHistoricalEvent.notes} onChange={e => setNewHistoricalEvent({...newHistoricalEvent, notes: e.target.value})} className={`w-full ${iBg} border ${iBo} rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-16`} />
+              <div>
+                <label className={`text-xs ${mt} mb-1 block`}>Groups</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {groups.map(g => <button key={g.id} type="button" onClick={() => setNewHistoricalEvent({...newHistoricalEvent, groupIds: newHistoricalEvent.groupIds.includes(g.id) ? newHistoricalEvent.groupIds.filter(id => id !== g.id) : [...newHistoricalEvent.groupIds, g.id]})} className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${newHistoricalEvent.groupIds.includes(g.id) ? 'text-white border-transparent' : mt + ' ' + iBo}`} style={newHistoricalEvent.groupIds.includes(g.id) ? {backgroundColor: g.color} : {}}>{g.name}</button>)}
+                </div>
+              </div>
+              <button onClick={addHistoricalEvent} disabled={!newHistoricalEvent.name || !newHistoricalEvent.startYear} className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-white">Add to Timeline</button>
             </div>
           </div>
         </div>
